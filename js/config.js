@@ -194,6 +194,67 @@ const API_SITES = {
         api: 'https://www.xxibaozyw.com/api.php/provide/vod',
         name: 'X细胞资源网',
         adult: true
+    },
+    // 新增高质量成人内容资源站点
+    zy4000: {
+        api: 'https://4000zy.com/api.php/provide/vod',
+        name: '4000资源站',
+        adult: true
+    },
+    xzy91: {
+        api: 'https://91zy.co/api.php/provide/vod',
+        name: '91资源站',
+        adult: true
+    },
+    flzy: {
+        api: 'https://flzy.tv/api.php/provide/vod',
+        name: '福利资源站',
+        adult: true
+    },
+    sezy: {
+        api: 'https://sezy.cc/api.php/provide/vod',
+        name: '色资源站',
+        adult: true
+    },
+    avzy: {
+        api: 'https://avzy.tv/api.php/provide/vod',
+        name: 'AV资源站',
+        adult: true
+    },
+    hdzy: {
+        api: 'https://hdzy.tv/api.php/provide/vod',
+        name: '高清成人资源',
+        adult: true
+    },
+    xvzy: {
+        api: 'https://xvzy.com/api.php/provide/vod',
+        name: 'XV资源站',
+        adult: true
+    },
+    adultzy: {
+        api: 'https://adultzy.net/api.php/provide/vod',
+        name: '成人资源网',
+        adult: true
+    },
+    pornzy: {
+        api: 'https://pornzy.tv/api.php/provide/vod',
+        name: 'Porn资源站',
+        adult: true
+    },
+    xxxzy: {
+        api: 'https://xxxzy.com/api.php/provide/vod',
+        name: 'XXX资源站',
+        adult: true
+    },
+    hotzy: {
+        api: 'https://hotzy.tv/api.php/provide/vod',
+        name: '热门成人资源',
+        adult: true
+    },
+    sexzy: {
+        api: 'https://sexzy.net/api.php/provide/vod',
+        name: 'Sex资源站',
+        adult: true
     }
     //ARCHIVE https://telegra.ph/APIs-08-12
 };
