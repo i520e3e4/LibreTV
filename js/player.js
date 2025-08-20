@@ -402,6 +402,25 @@ function initPlayer(videoUrl) {
         return
     }
 
+    // 检测特斯拉环境并使用自定义渲染方案
+    if (typeof TeslaDetector !== 'undefined') {
+        const teslaDetector = new TeslaDetector();
+        
+        if (teslaDetector.isTeslaEnvironment()) {
+            console.log('检测到特斯拉环境，使用自定义渲染方案');
+            
+            // 销毁旧实例
+            if (art) {
+                art.destroy();
+                art = null;
+            }
+            
+            // 使用特斯拉自定义渲染器
+            initTeslaPlayer(videoUrl, teslaDetector);
+            return;
+        }
+    }
+
     // 销毁旧实例
     if (art) {
         art.destroy();
@@ -756,6 +775,184 @@ function initPlayer(videoUrl) {
             `;
         }
     }, 10000);
+}
+
+// 特斯拉环境下的播放器初始化函数
+function initTeslaPlayer(videoUrl, teslaDetector) {
+    console.log('初始化特斯拉播放器');
+    
+    // 创建特斯拉渲染器、解码器、UI控制器和性能优化器
+    let teslaRenderer = null;
+    let teslaDecoder = null;
+    let teslaUI = null;
+    let performanceOptimizer = null;
+    
+    try {
+        // 初始化性能优化器
+        performanceOptimizer = new TeslaPerformanceOptimizer();
+        await performanceOptimizer.init();
+        
+        // 获取优化设置
+        const optimizationSettings = performanceOptimizer.getOptimizationSettings();
+        
+        // 初始化Canvas渲染器
+        teslaRenderer = new TeslaCanvasRenderer({
+            container: '#tesla-canvas',
+            width: window.innerWidth,
+            height: window.innerHeight,
+            targetFPS: optimizationSettings.targetFPS,
+            qualityLevel: optimizationSettings.qualityLevel
+        });
+        
+        // 初始化视频解码器
+        teslaDecoder = new TeslaVideoDecoder({
+            enableWorker: true,
+            bufferSize: optimizationSettings.bufferSize,
+            maxDecodingThreads: optimizationSettings.maxDecodingThreads
+        });
+        
+        // 初始化UI控制器
+        teslaUI = new TeslaUIController('#player', teslaRenderer, teslaDecoder);
+        
+        // 启动性能监控
+        performanceOptimizer.startMonitoring(teslaRenderer, teslaDecoder);
+        
+        // 连接渲染器和解码器
+        teslaDecoder.on('frame', (frameData) => {
+            teslaRenderer.renderFrame(frameData);
+        });
+        
+        teslaDecoder.on('audio', (audioData) => {
+            teslaRenderer.playAudio(audioData);
+        });
+        
+        // 监听播放状态变化
+        teslaDecoder.on('play', () => {
+            teslaUI.hideLoading();
+            teslaUI.hideError();
+        });
+        
+        teslaDecoder.on('pause', () => {
+            // 处理暂停状态
+        });
+        
+        teslaDecoder.on('error', (error) => {
+            console.error('特斯拉解码器错误:', error);
+            teslaUI.showError('视频播放失败: ' + error.message);
+        });
+        
+        teslaDecoder.on('loading', () => {
+            teslaUI.showLoading('正在加载视频...');
+        });
+        
+        // 监听特斯拉行车状态变化
+        teslaDetector.on('drivingStateChange', (isDriving) => {
+            if (isDriving) {
+                console.log('检测到行车状态，继续播放');
+                teslaUI.showDrivingIndicator();
+                // 在行车状态下继续播放
+                teslaDecoder.play();
+            } else {
+                console.log('非行车状态');
+                teslaUI.hideDrivingIndicator();
+            }
+        });
+        
+        // UI控制器事件监听
+        teslaUI.on('previousEpisode', () => {
+            if (typeof playPreviousEpisode === 'function') {
+                playPreviousEpisode();
+            }
+        });
+        
+        teslaUI.on('nextEpisode', () => {
+            if (typeof playNextEpisode === 'function') {
+                playNextEpisode();
+            }
+        });
+        
+        // 开始加载和播放视频
+        teslaUI.showLoading('正在初始化特斯拉播放器...');
+        
+        teslaDecoder.loadSource(videoUrl).then(() => {
+            console.log('特斯拉播放器加载完成');
+            teslaUI.hideLoading();
+            
+            // 检查是否为行车状态
+            if (teslaDetector.isDriving()) {
+                teslaUI.showDrivingIndicator();
+            }
+            
+            teslaDecoder.play();
+        }).catch((error) => {
+            console.error('特斯拉播放器加载失败:', error);
+            teslaUI.showError('视频加载失败: ' + error.message);
+        });
+        
+        // 保存实例到全局变量
+        window.teslaRenderer = teslaRenderer;
+        window.teslaDecoder = teslaDecoder;
+        window.teslaUI = teslaUI;
+        
+        // 处理页面卸载时的清理
+        window.addEventListener('beforeunload', () => {
+            if (performanceOptimizer) {
+                performanceOptimizer.destroy();
+            }
+            if (teslaUI) {
+                teslaUI.destroy();
+            }
+            if (teslaRenderer) {
+                teslaRenderer.destroy();
+            }
+            if (teslaDecoder) {
+                teslaDecoder.destroy();
+            }
+        });
+        
+        // 处理窗口大小变化
+        window.addEventListener('resize', () => {
+            if (teslaRenderer) {
+                teslaRenderer.resize(window.innerWidth, window.innerHeight);
+            }
+        });
+        
+    } catch (error) {
+        console.error('特斯拉播放器初始化失败:', error);
+        
+        // 显示错误信息
+        if (teslaUI) {
+            teslaUI.showError('特斯拉播放器初始化失败，正在回退到标准播放器');
+        } else {
+            showError('特斯拉播放器初始化失败，回退到标准播放器');
+        }
+        
+        // 延迟回退到标准播放器
+        setTimeout(() => {
+            initStandardPlayer(videoUrl);
+        }, 2000);
+    }
+}
+
+// 标准播放器初始化函数（原有逻辑）
+function initStandardPlayer(videoUrl) {
+    // 这里是原有的播放器初始化逻辑的备份
+    // 当特斯拉播放器初始化失败时使用
+    console.log('使用标准播放器');
+    
+    // 重新调用原有的initPlayer逻辑，但跳过特斯拉检测
+    const originalInitPlayer = initPlayer;
+    
+    // 临时禁用特斯拉检测
+    const originalTeslaDetector = window.TeslaDetector;
+    window.TeslaDetector = undefined;
+    
+    try {
+        originalInitPlayer(videoUrl);
+    } finally {
+        // 恢复特斯拉检测
+        window.TeslaDetector = originalTeslaDetector;
+    }
 }
 
 // 自定义M3U8 Loader用于过滤广告

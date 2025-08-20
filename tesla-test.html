@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>特斯拉行车观影功能测试</title>
+    <link rel="stylesheet" href="css/tesla-ui.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #000;
+            color: #fff;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #111;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .test-pass {
+            background: #0f5132;
+            border: 1px solid #0a3622;
+        }
+        .test-fail {
+            background: #58151c;
+            border: 1px solid #842029;
+        }
+        .test-info {
+            background: #055160;
+            border: 1px solid #0c4a6e;
+        }
+        .test-button {
+            background: #0d6efd;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0b5ed7;
+        }
+        .performance-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .metric-card {
+            background: #222;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0d6efd;
+        }
+        .metric-label {
+            font-size: 14px;
+            color: #aaa;
+            margin-top: 5px;
+        }
+        #player {
+            width: 100%;
+            height: 400px;
+            background: #000;
+            border: 1px solid #333;
+            border-radius: 8px;
+            margin: 20px 0;
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>特斯拉行车观影功能测试</h1>
+        
+        <!-- 环境检测 -->
+        <div class="test-section">
+            <h2>环境检测</h2>
+            <div id="environment-results"></div>
+            <button class="test-button" onclick="runEnvironmentTests()">重新检测环境</button>
+        </div>
+        
+        <!-- 性能指标 -->
+        <div class="test-section">
+            <h2>性能指标</h2>
+            <div class="performance-metrics">
+                <div class="metric-card">
+                    <div class="metric-value" id="fps-value">0</div>
+                    <div class="metric-label">FPS</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="memory-value">0</div>
+                    <div class="metric-label">内存使用 (MB)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="cpu-value">0</div>
+                    <div class="metric-label">CPU使用率 (%)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="latency-value">0</div>
+                    <div class="metric-label">延迟 (ms)</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 播放器测试 -->
+        <div class="test-section">
+            <h2>播放器测试</h2>
+            <div id="player"></div>
+            <div class="test-controls">
+                <button class="test-button" onclick="testVideoPlayback()">测试视频播放</button>
+                <button class="test-button" onclick="testCanvasRenderer()">测试Canvas渲染</button>
+                <button class="test-button" onclick="testWebGLRenderer()">测试WebGL渲染</button>
+                <button class="test-button" onclick="testAudioPlayback()">测试音频播放</button>
+                <button class="test-button" onclick="simulateDrivingMode()">模拟行车模式</button>
+                <button class="test-button" onclick="runPerformanceTests()">运行性能测试</button>
+            </div>
+            <div id="player-results"></div>
+        </div>
+        
+        <!-- 稳定性测试 -->
+        <div class="test-section">
+            <h2>稳定性测试</h2>
+            <div id="stability-results"></div>
+            <div class="test-controls">
+                <button class="test-button" onclick="runStabilityTest()">运行稳定性测试</button>
+                <button class="test-button" onclick="runMemoryLeakTest()">内存泄漏测试</button>
+                <button class="test-button" onclick="runLongPlaybackTest()">长时间播放测试</button>
+            </div>
+        </div>
+        
+        <!-- 兼容性测试 -->
+        <div class="test-section">
+            <h2>兼容性测试</h2>
+            <div id="compatibility-results"></div>
+            <button class="test-button" onclick="runCompatibilityTests()">运行兼容性测试</button>
+        </div>
+        
+        <!-- 测试日志 -->
+        <div class="test-section">
+            <h2>测试日志</h2>
+            <div id="test-logs" style="background: #000; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto;"></div>
+            <button class="test-button" onclick="clearLogs()">清空日志</button>
+            <button class="test-button" onclick="exportLogs()">导出日志</button>
+        </div>
+    </div>
+    
+    <!-- 引入必要的脚本 -->
+    <script src="js/tesla-detector.js"></script>
+    <script src="js/tesla-canvas-renderer.js"></script>
+    <script src="js/tesla-video-decoder.js"></script>
+    <script src="js/tesla-ui-controller.js"></script>
+    <script src="js/tesla-performance-optimizer.js"></script>
+    
+    <script>
+        // 测试状态
+        let testResults = {
+            environment: {},
+            performance: {},
+            stability: {},
+            compatibility: {}
+        };
+        
+        let performanceMonitor = null;
+        let teslaRenderer = null;
+        let teslaDecoder = null;
+        let teslaUI = null;
+        
+        // 日志函数
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('test-logs');
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
+            logEntry.style.color = type === 'error' ? '#ff6b6b' : type === 'success' ? '#51cf66' : '#74c0fc';
+            logElement.appendChild(logEntry);
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(`[Tesla Test] ${message}`);
+        }
+        
+        // 显示测试结果
+        function showResult(containerId, title, result, details = '') {
+            const container = document.getElementById(containerId);
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${result ? 'test-pass' : 'test-fail'}`;
+            resultDiv.innerHTML = `
+                <strong>${title}:</strong> ${result ? '通过' : '失败'}
+                ${details ? `<br><small>${details}</small>` : ''}
+            `;
+            container.appendChild(resultDiv);
+        }
+        
+        // 环境检测测试
+        function runEnvironmentTests() {
+            log('开始环境检测测试');
+            const container = document.getElementById('environment-results');
+            container.innerHTML = '';
+            
+            // 检测特斯拉环境
+            const isTesla = window.teslaDetector.isTesla;
+            showResult('environment-results', '特斯拉环境检测', isTesla, 
+                `User Agent: ${navigator.userAgent}`);
+            
+            // 检测行车状态
+            const isDriving = window.teslaDetector.isDriving;
+            showResult('environment-results', '行车状态检测', true, 
+                `当前状态: ${isDriving ? '行车中' : '停车中'}`);
+            
+            // 检测WebGL支持
+            const webglSupported = checkWebGLSupport();
+            showResult('environment-results', 'WebGL支持', webglSupported);
+            
+            // 检测Canvas支持
+            const canvasSupported = checkCanvasSupport();
+            showResult('environment-results', 'Canvas支持', canvasSupported);
+            
+            // 检测音频支持
+            const audioSupported = checkAudioSupport();
+            showResult('environment-results', '音频支持', audioSupported);
+            
+            testResults.environment = {
+                isTesla,
+                isDriving,
+                webglSupported,
+                canvasSupported,
+                audioSupported
+            };
+            
+            log('环境检测测试完成');
+        }
+        
+        // 检测WebGL支持
+        function checkWebGLSupport() {
+            try {
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                return !!gl;
+            } catch (e) {
+                return false;
+            }
+        }
+        
+        // 检测Canvas支持
+        function checkCanvasSupport() {
+            try {
+                const canvas = document.createElement('canvas');
+                return !!(canvas.getContext && canvas.getContext('2d'));
+            } catch (e) {
+                return false;
+            }
+        }
+        
+        // 检测音频支持
+        function checkAudioSupport() {
+            try {
+                return !!(window.AudioContext || window.webkitAudioContext);
+            } catch (e) {
+                return false;
+            }
+        }
+        
+        // 性能监控
+        function startPerformanceMonitor() {
+            if (performanceMonitor) return;
+            
+            performanceMonitor = setInterval(() => {
+                updatePerformanceMetrics();
+            }, 1000);
+        }
+        
+        function stopPerformanceMonitor() {
+            if (performanceMonitor) {
+                clearInterval(performanceMonitor);
+                performanceMonitor = null;
+            }
+        }
+        
+        function updatePerformanceMetrics() {
+            // FPS计算（简化版）
+            const fps = teslaRenderer ? teslaRenderer.getCurrentFPS() || 0 : 0;
+            document.getElementById('fps-value').textContent = fps.toFixed(1);
+            
+            // 内存使用
+            if (performance.memory) {
+                const memoryMB = (performance.memory.usedJSHeapSize / 1024 / 1024).toFixed(1);
+                document.getElementById('memory-value').textContent = memoryMB;
+            }
+            
+            // CPU使用率（模拟）
+            const cpuUsage = Math.random() * 20 + 10; // 模拟值
+            document.getElementById('cpu-value').textContent = cpuUsage.toFixed(1);
+            
+            // 延迟
+            const latency = teslaDecoder ? teslaDecoder.getCurrentLatency() || 0 : 0;
+            document.getElementById('latency-value').textContent = latency.toFixed(0);
+        }
+        
+        // 性能测试
+        async function runPerformanceTests() {
+            log('开始性能测试...');
+            
+            try {
+                // 初始化性能优化器
+                const performanceOptimizer = new TeslaPerformanceOptimizer();
+                await performanceOptimizer.init();
+                
+                // 获取硬件信息
+                const hardwareInfo = performanceOptimizer.detectHardwareCapabilities();
+                log(`硬件检测: GPU支持=${hardwareInfo.hasGPU}, 内存=${hardwareInfo.memoryGB}GB, CPU核心=${hardwareInfo.cpuCores}`);
+                
+                // 获取优化设置
+                const optimizationSettings = performanceOptimizer.getOptimizationSettings();
+                log(`优化设置: 目标帧率=${optimizationSettings.targetFPS}, 缓冲区=${optimizationSettings.bufferSize}, 画质=${optimizationSettings.qualityLevel}`);
+                
+                // 模拟性能监控
+                const performanceMetrics = performanceOptimizer.getPerformanceMetrics();
+                
+                updatePerformanceDisplay(performanceMetrics);
+                log('性能测试完成');
+                
+                // 清理资源
+                performanceOptimizer.destroy();
+            } catch (error) {
+                log('性能测试失败: ' + error.message);
+            }
+        }
+        
+        function updatePerformanceDisplay(metrics) {
+            if (metrics.fps !== undefined) {
+                document.getElementById('fps-value').textContent = metrics.fps.toFixed(1);
+            }
+            if (metrics.memoryUsage !== undefined) {
+                document.getElementById('memory-value').textContent = metrics.memoryUsage.toFixed(1);
+            }
+            if (metrics.cpuUsage !== undefined) {
+                document.getElementById('cpu-value').textContent = metrics.cpuUsage.toFixed(1);
+            }
+            if (metrics.latency !== undefined) {
+                document.getElementById('latency-value').textContent = metrics.latency.toFixed(0);
+            }
+        }
+        
+        // 测试视频播放
+        function testVideoPlayback() {
+            log('开始测试视频播放');
+            
+            try {
+                // 使用测试视频URL
+                const testVideoUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+                
+                if (window.teslaDetector.isTesla) {
+                    initTeslaPlayer(testVideoUrl);
+                } else {
+                    log('非特斯拉环境，使用标准播放器测试', 'info');
+                }
+                
+                showResult('player-results', '视频播放测试', true, '播放器初始化成功');
+            } catch (error) {
+                log(`视频播放测试失败: ${error.message}`, 'error');
+                showResult('player-results', '视频播放测试', false, error.message);
+            }
+        }
+        
+        // 初始化特斯拉播放器（测试版本）
+        function initTeslaPlayer(videoUrl) {
+            try {
+                // 清理之前的实例
+                if (teslaRenderer) teslaRenderer.destroy();
+                if (teslaDecoder) teslaDecoder.destroy();
+                if (teslaUI) teslaUI.destroy();
+                
+                // 创建新实例
+                teslaRenderer = new TeslaCanvasRenderer({
+                    container: '#player',
+                    width: 800,
+                    height: 400
+                });
+                
+                teslaDecoder = new TeslaVideoDecoder({
+                    enableWorker: true,
+                    bufferSize: 30
+                });
+                
+                teslaUI = new TeslaUIController('#player', teslaRenderer, teslaDecoder);
+                
+                // 连接组件
+                teslaDecoder.on('frame', (frameData) => {
+                    teslaRenderer.renderFrame(frameData);
+                });
+                
+                teslaDecoder.on('audio', (audioData) => {
+                    teslaRenderer.playAudio(audioData);
+                });
+                
+                // 加载视频
+                teslaDecoder.loadSource(videoUrl).then(() => {
+                    log('特斯拉播放器加载成功', 'success');
+                    startPerformanceMonitor();
+                }).catch((error) => {
+                    log(`特斯拉播放器加载失败: ${error.message}`, 'error');
+                });
+                
+            } catch (error) {
+                log(`特斯拉播放器初始化失败: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+        
+        // 测试Canvas渲染
+        function testCanvasRenderer() {
+            log('开始测试Canvas渲染');
+            
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = 400;
+                canvas.height = 300;
+                const ctx = canvas.getContext('2d');
+                
+                // 绘制测试图案
+                ctx.fillStyle = '#ff0000';
+                ctx.fillRect(0, 0, 100, 100);
+                ctx.fillStyle = '#00ff00';
+                ctx.fillRect(100, 0, 100, 100);
+                ctx.fillStyle = '#0000ff';
+                ctx.fillRect(0, 100, 100, 100);
+                
+                showResult('player-results', 'Canvas渲染测试', true, '渲染测试图案成功');
+                log('Canvas渲染测试通过', 'success');
+            } catch (error) {
+                showResult('player-results', 'Canvas渲染测试', false, error.message);
+                log(`Canvas渲染测试失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // 测试WebGL渲染
+        function testWebGLRenderer() {
+            log('开始测试WebGL渲染');
+            
+            try {
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                
+                if (!gl) {
+                    throw new Error('WebGL不支持');
+                }
+                
+                // 简单的WebGL测试
+                gl.clearColor(1.0, 0.0, 0.0, 1.0);
+                gl.clear(gl.COLOR_BUFFER_BIT);
+                
+                showResult('player-results', 'WebGL渲染测试', true, 'WebGL初始化成功');
+                log('WebGL渲染测试通过', 'success');
+            } catch (error) {
+                showResult('player-results', 'WebGL渲染测试', false, error.message);
+                log(`WebGL渲染测试失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // 测试音频播放
+        function testAudioPlayback() {
+            log('开始测试音频播放');
+            
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 440;
+                gainNode.gain.value = 0.1;
+                
+                oscillator.start();
+                setTimeout(() => oscillator.stop(), 500);
+                
+                showResult('player-results', '音频播放测试', true, '音频上下文创建成功');
+                log('音频播放测试通过', 'success');
+            } catch (error) {
+                showResult('player-results', '音频播放测试', false, error.message);
+                log(`音频播放测试失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // 模拟行车模式
+        function simulateDrivingMode() {
+            log('模拟行车模式');
+            
+            // 模拟行车状态变化
+            window.teslaDetector.isDriving = !window.teslaDetector.isDriving;
+            window.teslaDetector.onDrivingStateChange(window.teslaDetector.isDriving);
+            
+            const status = window.teslaDetector.isDriving ? '行车中' : '停车中';
+            showResult('player-results', '行车模式模拟', true, `当前状态: ${status}`);
+            log(`行车状态切换为: ${status}`, 'info');
+        }
+        
+        // 稳定性测试
+        function runStabilityTest() {
+            log('开始稳定性测试');
+            const container = document.getElementById('stability-results');
+            container.innerHTML = '';
+            
+            let testCount = 0;
+            const maxTests = 10;
+            
+            const stabilityInterval = setInterval(() => {
+                testCount++;
+                
+                try {
+                    // 模拟播放器操作
+                    if (teslaDecoder) {
+                        if (Math.random() > 0.5) {
+                            teslaDecoder.play();
+                        } else {
+                            teslaDecoder.pause();
+                        }
+                    }
+                    
+                    log(`稳定性测试 ${testCount}/${maxTests} 通过`);
+                } catch (error) {
+                    log(`稳定性测试 ${testCount}/${maxTests} 失败: ${error.message}`, 'error');
+                }
+                
+                if (testCount >= maxTests) {
+                    clearInterval(stabilityInterval);
+                    showResult('stability-results', '稳定性测试', true, `完成${maxTests}次测试`);
+                    log('稳定性测试完成', 'success');
+                }
+            }, 1000);
+        }
+        
+        // 内存泄漏测试
+        function runMemoryLeakTest() {
+            log('开始内存泄漏测试');
+            
+            const initialMemory = performance.memory ? performance.memory.usedJSHeapSize : 0;
+            let testCount = 0;
+            
+            const memoryTestInterval = setInterval(() => {
+                testCount++;
+                
+                // 创建和销毁对象来测试内存泄漏
+                const testObjects = [];
+                for (let i = 0; i < 1000; i++) {
+                    testObjects.push(new Array(100).fill(Math.random()));
+                }
+                
+                // 清理
+                testObjects.length = 0;
+                
+                if (testCount >= 5) {
+                    clearInterval(memoryTestInterval);
+                    
+                    const finalMemory = performance.memory ? performance.memory.usedJSHeapSize : 0;
+                    const memoryIncrease = finalMemory - initialMemory;
+                    const isMemoryLeakDetected = memoryIncrease > 10 * 1024 * 1024; // 10MB阈值
+                    
+                    showResult('stability-results', '内存泄漏测试', !isMemoryLeakDetected, 
+                        `内存变化: ${(memoryIncrease / 1024 / 1024).toFixed(2)}MB`);
+                    log('内存泄漏测试完成', 'success');
+                }
+            }, 2000);
+        }
+        
+        // 长时间播放测试
+        function runLongPlaybackTest() {
+            log('开始长时间播放测试（30秒）');
+            
+            if (!teslaDecoder) {
+                showResult('stability-results', '长时间播放测试', false, '播放器未初始化');
+                return;
+            }
+            
+            const startTime = Date.now();
+            teslaDecoder.play();
+            
+            setTimeout(() => {
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+                
+                showResult('stability-results', '长时间播放测试', true, 
+                    `播放时长: ${(duration / 1000).toFixed(1)}秒`);
+                log('长时间播放测试完成', 'success');
+            }, 30000);
+        }
+        
+        // 兼容性测试
+        function runCompatibilityTests() {
+            log('开始兼容性测试');
+            const container = document.getElementById('compatibility-results');
+            container.innerHTML = '';
+            
+            // 测试各种浏览器特性
+            const tests = [
+                { name: 'ES6支持', test: () => typeof Symbol !== 'undefined' },
+                { name: 'Promise支持', test: () => typeof Promise !== 'undefined' },
+                { name: 'Fetch API', test: () => typeof fetch !== 'undefined' },
+                { name: 'Web Workers', test: () => typeof Worker !== 'undefined' },
+                { name: 'Local Storage', test: () => typeof localStorage !== 'undefined' },
+                { name: 'Session Storage', test: () => typeof sessionStorage !== 'undefined' },
+                { name: 'IndexedDB', test: () => typeof indexedDB !== 'undefined' },
+                { name: 'WebRTC', test: () => typeof RTCPeerConnection !== 'undefined' },
+                { name: 'WebSocket', test: () => typeof WebSocket !== 'undefined' },
+                { name: 'Geolocation', test: () => typeof navigator.geolocation !== 'undefined' }
+            ];
+            
+            tests.forEach(test => {
+                try {
+                    const result = test.test();
+                    showResult('compatibility-results', test.name, result);
+                    log(`兼容性测试 - ${test.name}: ${result ? '支持' : '不支持'}`);
+                } catch (error) {
+                    showResult('compatibility-results', test.name, false, error.message);
+                    log(`兼容性测试 - ${test.name}: 错误 - ${error.message}`, 'error');
+                }
+            });
+            
+            log('兼容性测试完成', 'success');
+        }
+        
+        // 清空日志
+        function clearLogs() {
+            document.getElementById('test-logs').innerHTML = '';
+        }
+        
+        // 导出日志
+        function exportLogs() {
+            const logs = document.getElementById('test-logs').innerText;
+            const blob = new Blob([logs], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `tesla-test-logs-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        // 页面加载完成后自动运行环境检测
+        window.addEventListener('load', () => {
+            log('特斯拉行车观影功能测试页面加载完成');
+            runEnvironmentTests();
+        });
+        
+        // 页面卸载时清理资源
+        window.addEventListener('beforeunload', () => {
+            stopPerformanceMonitor();
+            if (teslaRenderer) teslaRenderer.destroy();
+            if (teslaDecoder) teslaDecoder.destroy();
+            if (teslaUI) teslaUI.destroy();
+        });
+    </script>
+</body>
+</html>

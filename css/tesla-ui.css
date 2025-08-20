@@ -1,0 +1,357 @@
+/* 特斯拉车机专用UI样式 */
+
+/* 特斯拉播放器容器 */
+.tesla-player-container {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    background: #000;
+    overflow: hidden;
+    font-family: 'Tesla', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* 特斯拉Canvas播放器 */
+.tesla-canvas-player {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    cursor: pointer;
+}
+
+/* 特斯拉控制栏 */
+.tesla-controls {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+    padding: 20px;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    z-index: 1000;
+}
+
+.tesla-controls.show {
+    transform: translateY(0);
+}
+
+/* 特斯拉进度条 */
+.tesla-progress-container {
+    position: relative;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    margin-bottom: 15px;
+    cursor: pointer;
+}
+
+.tesla-progress-bar {
+    height: 100%;
+    background: #00d4ff;
+    border-radius: 4px;
+    transition: width 0.1s ease;
+    position: relative;
+}
+
+.tesla-progress-thumb {
+    position: absolute;
+    right: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 12px;
+    height: 12px;
+    background: #00d4ff;
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.tesla-progress-container:hover .tesla-progress-thumb {
+    opacity: 1;
+}
+
+/* 特斯拉控制按钮组 */
+.tesla-control-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.tesla-control-left,
+.tesla-control-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.tesla-control-center {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+/* 特斯拉按钮样式 */
+.tesla-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+}
+
+.tesla-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.1);
+}
+
+.tesla-btn:active {
+    transform: scale(0.95);
+}
+
+.tesla-btn.primary {
+    background: #00d4ff;
+    font-size: 20px;
+    width: 50px;
+    height: 50px;
+}
+
+.tesla-btn.primary:hover {
+    background: #0099cc;
+}
+
+/* 特斯拉时间显示 */
+.tesla-time {
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+    min-width: 80px;
+    text-align: center;
+}
+
+/* 特斯拉音量控制 */
+.tesla-volume-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tesla-volume-slider {
+    width: 80px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    position: relative;
+    cursor: pointer;
+}
+
+.tesla-volume-bar {
+    height: 100%;
+    background: #00d4ff;
+    border-radius: 2px;
+    transition: width 0.1s ease;
+}
+
+/* 特斯拉加载动画 */
+.tesla-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: white;
+    z-index: 999;
+}
+
+.tesla-loading-spinner {
+    width: 60px;
+    height: 60px;
+    border: 3px solid rgba(0, 212, 255, 0.3);
+    border-top: 3px solid #00d4ff;
+    border-radius: 50%;
+    animation: tesla-spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes tesla-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.tesla-loading-text {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+
+.tesla-loading-subtitle {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* 特斯拉错误提示 */
+.tesla-error {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 0, 0, 0.9);
+    color: white;
+    padding: 20px 30px;
+    border-radius: 10px;
+    text-align: center;
+    max-width: 400px;
+    z-index: 1001;
+}
+
+.tesla-error-title {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.tesla-error-message {
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+/* 特斯拉全屏优化 */
+.tesla-fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9999;
+}
+
+/* 特斯拉手势提示 */
+.tesla-gesture-hint {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 20px;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 1002;
+}
+
+.tesla-gesture-hint.show {
+    opacity: 1;
+}
+
+/* 特斯拉行车模式指示器 */
+.tesla-driving-indicator {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: #00d4ff;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
+    z-index: 1002;
+    display: none;
+}
+
+.tesla-driving-indicator.active {
+    display: block;
+    animation: tesla-pulse 2s infinite;
+}
+
+@keyframes tesla-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* 特斯拉触摸优化 */
+.tesla-touch-target {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 特斯拉响应式设计 */
+@media (max-width: 768px) {
+    .tesla-controls {
+        padding: 15px;
+    }
+    
+    .tesla-control-buttons {
+        gap: 10px;
+    }
+    
+    .tesla-control-left,
+    .tesla-control-right {
+        gap: 10px;
+    }
+    
+    .tesla-btn {
+        width: 35px;
+        height: 35px;
+        font-size: 16px;
+    }
+    
+    .tesla-btn.primary {
+        width: 45px;
+        height: 45px;
+        font-size: 18px;
+    }
+}
+
+/* 特斯拉暗色主题优化 */
+@media (prefers-color-scheme: dark) {
+    .tesla-player-container {
+        background: #000;
+    }
+}
+
+/* 特斯拉高对比度模式 */
+@media (prefers-contrast: high) {
+    .tesla-progress-bar,
+    .tesla-progress-thumb,
+    .tesla-volume-bar {
+        background: #ffffff;
+    }
+    
+    .tesla-btn.primary {
+        background: #ffffff;
+        color: #000;
+    }
+}
+
+/* 特斯拉减少动画模式 */
+@media (prefers-reduced-motion: reduce) {
+    .tesla-controls,
+    .tesla-progress-bar,
+    .tesla-volume-bar,
+    .tesla-btn,
+    .tesla-gesture-hint {
+        transition: none;
+    }
+    
+    .tesla-loading-spinner {
+        animation: none;
+    }
+    
+    .tesla-driving-indicator.active {
+        animation: none;
+    }
+}
