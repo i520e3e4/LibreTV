@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tesla完整测试套件 - LibreTV</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .test-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .test-panel:hover {
+            transform: translateY(-5px);
+        }
+        
+        .panel-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .panel-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 1.5em;
+            color: white;
+        }
+        
+        .webrtc-icon { background: #4CAF50; }
+        .proxy-icon { background: #2196F3; }
+        .performance-icon { background: #FF9800; }
+        .fallback-icon { background: #9C27B0; }
+        
+        .panel-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+        
+        .control-group input,
+        .control-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .control-group input:focus,
+        .control-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+        
+        .btn-success {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #45a049;
+        }
+        
+        .btn-warning {
+            background: #FF9800;
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background: #f57c00;
+        }
+        
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #da190b;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-success { background: #4CAF50; }
+        .status-warning { background: #FF9800; }
+        .status-error { background: #f44336; }
+        .status-info { background: #2196F3; }
+        
+        .video-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        #testVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2em;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .video-overlay.show {
+            opacity: 1;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .metric-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .metric-label {
+            font-size: 0.9em;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .log-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .log-content {
+            background: #1e1e1e;
+            color: #f0f0f0;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-radius: 3px;
+        }
+        
+        .log-info { background: rgba(33, 150, 243, 0.1); }
+        .log-success { background: rgba(76, 175, 80, 0.1); }
+        .log-warning { background: rgba(255, 152, 0, 0.1); }
+        .log-error { background: rgba(244, 67, 54, 0.1); }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid;
+        }
+        
+        .alert-info {
+            background: #e3f2fd;
+            border-color: #2196F3;
+            color: #1976d2;
+        }
+        
+        .alert-success {
+            background: #e8f5e8;
+            border-color: #4CAF50;
+            color: #2e7d32;
+        }
+        
+        .alert-warning {
+            background: #fff3e0;
+            border-color: #FF9800;
+            color: #f57c00;
+        }
+        
+        .alert-error {
+            background: #ffebee;
+            border-color: #f44336;
+            color: #c62828;
+        }
+        
+        @media (max-width: 768px) {
+            .test-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚗 Tesla完整测试套件</h1>
+            <p>WebRTC + 代理服务器 + 性能监控 + 智能降级</p>
+        </div>
+        
+        <!-- 测试控制面板 -->
+        <div class="test-grid">
+            <!-- WebRTC测试面板 -->
+            <div class="test-panel">
+                <div class="panel-header">
+                    <div class="panel-icon webrtc-icon">🎥</div>
+                    <div class="panel-title">WebRTC实时流媒体</div>
+                </div>
+                
+                <div class="control-group">
+                    <label>信令服务器地址:</label>
+                    <input type="text" id="signalServerUrl" value="ws://localhost:8080/signal" placeholder="ws://localhost:8080/signal">
+                </div>
+                
+                <div class="control-group">
+                    <label>视频源URL:</label>
+                    <input type="text" id="webrtcVideoUrl" value="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" placeholder="视频URL">
+                </div>
+                
+                <button class="btn btn-primary" onclick="testWebRTC()">🚀 测试WebRTC</button>
+                <button class="btn btn-warning" onclick="stopWebRTC()">⏹️ 停止</button>
+                
+                <div id="webrtcStatus" class="alert alert-info" style="margin-top: 15px;">
+                    <span class="status-indicator status-info"></span>
+                    WebRTC就绪，等待测试
+                </div>
+            </div>
+            
+            <!-- 代理服务器测试面板 -->
+            <div class="test-panel">
+                <div class="panel-header">
+                    <div class="panel-icon proxy-icon">🔄</div>
+                    <div class="panel-title">代理服务器播放</div>
+                </div>
+                
+                <div class="control-group">
+                    <label>代理服务器地址:</label>
+                    <input type="text" id="proxyServerUrl" value="http://localhost:3001" placeholder="http://localhost:3001">
+                </div>
+                
+                <div class="control-group">
+                    <label>视频源URL:</label>
+                    <input type="text" id="proxyVideoUrl" value="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4" placeholder="视频URL">
+                </div>
+                
+                <div class="control-group">
+                    <label>播放模式:</label>
+                    <select id="proxyMode">
+                        <option value="proxy">代理模式</option>
+                        <option value="transcode">转码模式</option>
+                        <option value="stream">流媒体模式</option>
+                    </select>
+                </div>
+                
+                <button class="btn btn-primary" onclick="testProxy()">🚀 测试代理</button>
+                <button class="btn btn-warning" onclick="stopProxy()">⏹️ 停止</button>
+                
+                <div id="proxyStatus" class="alert alert-info" style="margin-top: 15px;">
+                    <span class="status-indicator status-info"></span>
+                    代理服务器就绪，等待测试
+                </div>
+            </div>
+            
+            <!-- 性能监控面板 -->
+            <div class="test-panel">
+                <div class="panel-header">
+                    <div class="panel-icon performance-icon">📊</div>
+                    <div class="panel-title">性能监控</div>
+                </div>
+                
+                <div class="control-group">
+                    <label>监控间隔 (毫秒):</label>
+                    <input type="number" id="monitorInterval" value="1000" min="500" max="5000">
+                </div>
+                
+                <div class="control-group">
+                    <label>优化间隔 (毫秒):</label>
+                    <input type="number" id="optimizeInterval" value="10000" min="5000" max="30000">
+                </div>
+                
+                <button class="btn btn-success" onclick="startMonitoring()">📈 开始监控</button>
+                <button class="btn btn-danger" onclick="stopMonitoring()">📉 停止监控</button>
+                <button class="btn btn-warning" onclick="resetMetrics()">🔄 重置指标</button>
+                
+                <div id="monitoringStatus" class="alert alert-info" style="margin-top: 15px;">
+                    <span class="status-indicator status-info"></span>
+                    性能监控就绪
+                </div>
+            </div>
+            
+            <!-- 智能降级面板 -->
+            <div class="test-panel">
+                <div class="panel-header">
+                    <div class="panel-icon fallback-icon">🧠</div>
+                    <div class="panel-title">智能降级测试</div>
+                </div>
+                
+                <div class="control-group">
+                    <label>测试视频URL:</label>
+                    <input type="text" id="fallbackVideoUrl" value="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4" placeholder="视频URL">
+                </div>
+                
+                <div class="control-group">
+                    <label>降级策略:</label>
+                    <select id="fallbackStrategy">
+                        <option value="auto">自动选择</option>
+                        <option value="quality_first">质量优先</option>
+                        <option value="speed_first">速度优先</option>
+                        <option value="compatibility_first">兼容性优先</option>
+                    </select>
+                </div>
+                
+                <button class="btn btn-primary" onclick="testFallback()">🧠 智能播放</button>
+                <button class="btn btn-warning" onclick="stopFallback()">⏹️ 停止</button>
+                
+                <div id="fallbackStatus" class="alert alert-info" style="margin-top: 15px;">
+                    <span class="status-indicator status-info"></span>
+                    智能降级就绪
+                </div>
+            </div>
+        </div>
+        
+        <!-- 视频播放区域 -->
+        <div class="video-container">
+            <h3>📺 视频播放区域</h3>
+            <div class="video-wrapper">
+                <video id="testVideo" controls>
+                    您的浏览器不支持视频播放。
+                </video>
+                <div id="videoOverlay" class="video-overlay">
+                    <div>等待播放...</div>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <button class="btn btn-success" onclick="playVideo()">▶️ 播放</button>
+                <button class="btn btn-warning" onclick="pauseVideo()">⏸️ 暂停</button>
+                <button class="btn btn-danger" onclick="stopVideo()">⏹️ 停止</button>
+                <button class="btn btn-primary" onclick="toggleFullscreen()">🔍 全屏</button>
+            </div>
+        </div>
+        
+        <!-- 性能指标显示 -->
+        <div class="video-container">
+            <h3>📊 实时性能指标</h3>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-value" id="bandwidthMetric">0</div>
+                    <div class="metric-label">带宽 (Mbps)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="fpsMetric">0</div>
+                    <div class="metric-label">帧率 (FPS)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="latencyMetric">0</div>
+                    <div class="metric-label">延迟 (ms)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="cpuMetric">0</div>
+                    <div class="metric-label">CPU (%)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="memoryMetric">0</div>
+                    <div class="metric-label">内存 (%)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="scoreMetric">0</div>
+                    <div class="metric-label">总体评分</div>
+                </div>
+            </div>
+            
+            <div class="progress-bar">
+                <div id="performanceProgress" class="progress-fill"></div>
+            </div>
+        </div>
+        
+        <!-- 日志显示区域 -->
+        <div class="log-container">
+            <div class="log-header">
+                <h3>📋 系统日志</h3>
+                <div>
+                    <button class="btn btn-warning" onclick="clearLogs()">🗑️ 清空日志</button>
+                    <button class="btn btn-primary" onclick="exportLogs()">💾 导出日志</button>
+                </div>
+            </div>
+            <div id="logContent" class="log-content">
+                <div class="log-entry log-info">[INFO] Tesla测试套件已加载</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 引入所有必要的脚本 -->
+    <script src="js/tesla-webrtc-player.js"></script>
+    <script src="js/tesla-proxy-client.js"></script>
+    <script src="js/tesla-performance-monitor.js"></script>
+    <script src="js/tesla-fallback-manager.js"></script>
+    
+    <script>
+        // 全局变量
+        let webrtcPlayer = null;
+        let proxyClient = null;
+        let performanceMonitor = null;
+        let fallbackManager = null;
+        let currentMethod = null;
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeTestSuite();
+        });
+        
+        /**
+         * 初始化测试套件
+         */
+        function initializeTestSuite() {
+            log('初始化Tesla测试套件...', 'info');
+            
+            // 初始化代理客户端
+            proxyClient = new TeslaProxyClient({
+                serverUrl: 'http://localhost:3001',
+                debug: true
+            });
+            
+            // 初始化性能监控器
+            performanceMonitor = new TeslaPerformanceMonitor({
+                debug: true,
+                monitoringInterval: 1000,
+                optimizationInterval: 10000,
+                onMetricsUpdate: updateMetricsDisplay,
+                onPerformanceAlert: handlePerformanceAlert,
+                onOptimizationApplied: handleOptimizationApplied
+            });
+            
+            // 初始化智能降级管理器
+            fallbackManager = new TeslaFallbackManager({
+                debug: true,
+                onMethodSelected: handleMethodSelected,
+                onMethodFailed: handleMethodFailed,
+                onFallbackComplete: handleFallbackComplete
+            });
+            
+            log('测试套件初始化完成', 'success');
+        }
+        
+        /**
+         * 测试WebRTC
+         */
+        async function testWebRTC() {
+            try {
+                log('开始WebRTC测试...', 'info');
+                updateStatus('webrtcStatus', '正在连接WebRTC...', 'warning');
+                
+                const signalServerUrl = document.getElementById('signalServerUrl').value;
+                const videoUrl = document.getElementById('webrtcVideoUrl').value;
+                
+                // 创建WebRTC播放器
+                webrtcPlayer = new TeslaWebRTCPlayer({
+                    signalServerUrl: signalServerUrl,
+                    debug: true
+                });
+                
+                // 连接并播放
+                await webrtcPlayer.connect();
+                await webrtcPlayer.play(videoUrl, document.getElementById('testVideo'));
+                
+                currentMethod = 'webrtc';
+                updateStatus('webrtcStatus', 'WebRTC连接成功，正在播放', 'success');
+                hideVideoOverlay();
+                
+                log('WebRTC测试成功', 'success');
+                
+            } catch (error) {
+                log(`WebRTC测试失败: ${error.message}`, 'error');
+                updateStatus('webrtcStatus', `WebRTC连接失败: ${error.message}`, 'error');
+            }
+        }
+        
+        /**
+         * 停止WebRTC
+         */
+        function stopWebRTC() {
+            if (webrtcPlayer) {
+                webrtcPlayer.disconnect();
+                webrtcPlayer = null;
+                currentMethod = null;
+                updateStatus('webrtcStatus', 'WebRTC已停止', 'info');
+                showVideoOverlay('WebRTC已停止');
+                log('WebRTC已停止', 'info');
+            }
+        }
+        
+        /**
+         * 测试代理服务器
+         */
+        async function testProxy() {
+            try {
+                log('开始代理服务器测试...', 'info');
+                updateStatus('proxyStatus', '正在连接代理服务器...', 'warning');
+                
+                const serverUrl = document.getElementById('proxyServerUrl').value;
+                const videoUrl = document.getElementById('proxyVideoUrl').value;
+                const mode = document.getElementById('proxyMode').value;
+                
+                // 更新代理客户端配置
+                proxyClient.serverUrl = serverUrl;
+                
+                // 检查服务器状态
+                const status = await proxyClient.checkServerStatus();
+                if (!status.available) {
+                    throw new Error('代理服务器不可用');
+                }
+                
+                // 根据模式生成URL
+                let proxyUrl;
+                switch (mode) {
+                    case 'transcode':
+                        proxyUrl = proxyClient.getTranscodeUrl(videoUrl, 'tesla_optimized');
+                        break;
+                    case 'stream':
+                        proxyUrl = proxyClient.getStreamUrl(videoUrl);
+                        break;
+                    default:
+                        proxyUrl = proxyClient.getProxyUrl(videoUrl);
+                }
+                
+                // 播放视频
+                const video = document.getElementById('testVideo');
+                video.src = proxyUrl;
+                await video.play();
+                
+                currentMethod = 'proxy';
+                updateStatus('proxyStatus', `代理服务器连接成功 (${mode}模式)`, 'success');
+                hideVideoOverlay();
+                
+                log(`代理服务器测试成功 (${mode}模式)`, 'success');
+                
+            } catch (error) {
+                log(`代理服务器测试失败: ${error.message}`, 'error');
+                updateStatus('proxyStatus', `代理服务器连接失败: ${error.message}`, 'error');
+            }
+        }
+        
+        /**
+         * 停止代理播放
+         */
+        function stopProxy() {
+            const video = document.getElementById('testVideo');
+            video.pause();
+            video.src = '';
+            currentMethod = null;
+            updateStatus('proxyStatus', '代理播放已停止', 'info');
+            showVideoOverlay('代理播放已停止');
+            log('代理播放已停止', 'info');
+        }
+        
+        /**
+         * 开始性能监控
+         */
+        function startMonitoring() {
+            const video = document.getElementById('testVideo');
+            const monitorInterval = parseInt(document.getElementById('monitorInterval').value);
+            const optimizeInterval = parseInt(document.getElementById('optimizeInterval').value);
+            
+            performanceMonitor.monitoringInterval = monitorInterval;
+            performanceMonitor.optimizationInterval = optimizeInterval;
+            
+            performanceMonitor.startMonitoring(video, getCurrentPlayer());
+            
+            updateStatus('monitoringStatus', '性能监控已启动', 'success');
+            log('性能监控已启动', 'success');
+        }
+        
+        /**
+         * 停止性能监控
+         */
+        function stopMonitoring() {
+            performanceMonitor.stopMonitoring();
+            updateStatus('monitoringStatus', '性能监控已停止', 'info');
+            log('性能监控已停止', 'info');
+        }
+        
+        /**
+         * 重置性能指标
+         */
+        function resetMetrics() {
+            performanceMonitor.resetMetrics();
+            updateMetricsDisplay({
+                bandwidth: { current: 0 },
+                playback: { fps: 0, latency: 0 },
+                system: { cpu: 0, memory: 0 },
+                experience: { userSatisfaction: 0 }
+            });
+            log('性能指标已重置', 'info');
+        }
+        
+        /**
+         * 测试智能降级
+         */
+        async function testFallback() {
+            try {
+                log('开始智能降级测试...', 'info');
+                updateStatus('fallbackStatus', '正在分析最佳播放方案...', 'warning');
+                
+                const videoUrl = document.getElementById('fallbackVideoUrl').value;
+                const strategy = document.getElementById('fallbackStrategy').value;
+                
+                // 执行智能降级播放
+                await fallbackManager.executeWithFallback(videoUrl, async (method, url, options) => {
+                    log(`尝试播放方案: ${method.name}`, 'info');
+                    
+                    switch (method.name) {
+                        case 'webrtc':
+                            return await playWithWebRTC(url);
+                        case 'proxy':
+                        case 'transcode':
+                            return await playWithProxy(url, method.name);
+                        case 'direct':
+                            return await playDirect(url);
+                        default:
+                            throw new Error(`未知的播放方案: ${method.name}`);
+                    }
+                }, { strategy });
+                
+                updateStatus('fallbackStatus', '智能降级播放成功', 'success');
+                hideVideoOverlay();
+                
+            } catch (error) {
+                log(`智能降级测试失败: ${error.message}`, 'error');
+                updateStatus('fallbackStatus', `智能降级失败: ${error.message}`, 'error');
+            }
+        }
+        
+        /**
+         * 停止智能降级
+         */
+        function stopFallback() {
+            stopVideo();
+            updateStatus('fallbackStatus', '智能降级已停止', 'info');
+            log('智能降级已停止', 'info');
+        }
+        
+        /**
+         * 使用WebRTC播放
+         */
+        async function playWithWebRTC(url) {
+            if (!webrtcPlayer) {
+                webrtcPlayer = new TeslaWebRTCPlayer({
+                    signalServerUrl: document.getElementById('signalServerUrl').value,
+                    debug: true
+                });
+                await webrtcPlayer.connect();
+            }
+            
+            await webrtcPlayer.play(url, document.getElementById('testVideo'));
+            currentMethod = 'webrtc';
+            return 'webrtc';
+        }
+        
+        /**
+         * 使用代理播放
+         */
+        async function playWithProxy(url, mode) {
+            let proxyUrl;
+            
+            switch (mode) {
+                case 'transcode':
+                    proxyUrl = proxyClient.getTranscodeUrl(url, 'tesla_optimized');
+                    break;
+                default:
+                    proxyUrl = proxyClient.getProxyUrl(url);
+            }
+            
+            const video = document.getElementById('testVideo');
+            video.src = proxyUrl;
+            await video.play();
+            
+            currentMethod = 'proxy';
+            return 'proxy';
+        }
+        
+        /**
+         * 直接播放
+         */
+        async function playDirect(url) {
+            const video = document.getElementById('testVideo');
+            video.src = url;
+            await video.play();
+            
+            currentMethod = 'direct';
+            return 'direct';
+        }
+        
+        /**
+         * 获取当前播放器
+         */
+        function getCurrentPlayer() {
+            switch (currentMethod) {
+                case 'webrtc':
+                    return webrtcPlayer;
+                case 'proxy':
+                    return proxyClient;
+                default:
+                    return null;
+            }
+        }
+        
+        /**
+         * 视频控制函数
+         */
+        function playVideo() {
+            const video = document.getElementById('testVideo');
+            video.play();
+            log('视频播放', 'info');
+        }
+        
+        function pauseVideo() {
+            const video = document.getElementById('testVideo');
+            video.pause();
+            log('视频暂停', 'info');
+        }
+        
+        function stopVideo() {
+            const video = document.getElementById('testVideo');
+            video.pause();
+            video.currentTime = 0;
+            showVideoOverlay('视频已停止');
+            log('视频停止', 'info');
+        }
+        
+        function toggleFullscreen() {
+            const video = document.getElementById('testVideo');
+            if (video.requestFullscreen) {
+                video.requestFullscreen();
+            } else if (video.webkitRequestFullscreen) {
+                video.webkitRequestFullscreen();
+            } else if (video.msRequestFullscreen) {
+                video.msRequestFullscreen();
+            }
+        }
+        
+        /**
+         * 更新状态显示
+         */
+        function updateStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            const indicator = element.querySelector('.status-indicator');
+            
+            element.className = `alert alert-${type}`;
+            indicator.className = `status-indicator status-${type}`;
+            
+            // 更新文本，保留状态指示器
+            const textNode = element.childNodes[element.childNodes.length - 1];
+            if (textNode.nodeType === Node.TEXT_NODE) {
+                textNode.textContent = message;
+            } else {
+                element.appendChild(document.createTextNode(message));
+            }
+        }
+        
+        /**
+         * 显示/隐藏视频覆盖层
+         */
+        function showVideoOverlay(message) {
+            const overlay = document.getElementById('videoOverlay');
+            overlay.querySelector('div').textContent = message;
+            overlay.classList.add('show');
+        }
+        
+        function hideVideoOverlay() {
+            const overlay = document.getElementById('videoOverlay');
+            overlay.classList.remove('show');
+        }
+        
+        /**
+         * 更新性能指标显示
+         */
+        function updateMetricsDisplay(metrics) {
+            document.getElementById('bandwidthMetric').textContent = 
+                (metrics.bandwidth.current / 1000000).toFixed(1);
+            document.getElementById('fpsMetric').textContent = 
+                metrics.playback.fps.toFixed(0);
+            document.getElementById('latencyMetric').textContent = 
+                metrics.playback.latency.toFixed(0);
+            document.getElementById('cpuMetric').textContent = 
+                metrics.system.cpu.toFixed(0);
+            document.getElementById('memoryMetric').textContent = 
+                metrics.system.memory.toFixed(0);
+            
+            // 计算总体评分
+            const score = performanceMonitor.calculateOverallScore();
+            document.getElementById('scoreMetric').textContent = score;
+            
+            // 更新进度条
+            const progressBar = document.getElementById('performanceProgress');
+            progressBar.style.width = `${score}%`;
+        }
+        
+        /**
+         * 处理性能警告
+         */
+        function handlePerformanceAlert(alerts) {
+            alerts.forEach(alert => {
+                log(`性能警告: ${alert.message} (${alert.value}/${alert.threshold})`, 'warning');
+            });
+        }
+        
+        /**
+         * 处理优化应用
+         */
+        function handleOptimizationApplied(optimizations) {
+            optimizations.forEach(opt => {
+                log(`应用优化: ${opt.type} (${opt.reason})`, 'success');
+            });
+        }
+        
+        /**
+         * 处理方案选择
+         */
+        function handleMethodSelected(method) {
+            log(`选择播放方案: ${method.name} - ${method.description}`, 'info');
+        }
+        
+        /**
+         * 处理方案失败
+         */
+        function handleMethodFailed(info) {
+            log(`播放方案失败: ${info.method.name} - ${info.error.message}`, 'warning');
+        }
+        
+        /**
+         * 处理降级完成
+         */
+        function handleFallbackComplete(result) {
+            if (result.success) {
+                log(`降级成功: 使用方案 ${result.method.name}`, 'success');
+            } else {
+                log(`降级失败: ${result.error.message}`, 'error');
+            }
+        }
+        
+        /**
+         * 日志函数
+         */
+        function log(message, type = 'info') {
+            const logContent = document.getElementById('logContent');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.textContent = `[${timestamp}] [${type.toUpperCase()}] ${message}`;
+            
+            logContent.appendChild(logEntry);
+            logContent.scrollTop = logContent.scrollHeight;
+            
+            // 限制日志条数
+            const entries = logContent.querySelectorAll('.log-entry');
+            if (entries.length > 100) {
+                entries[0].remove();
+            }
+        }
+        
+        /**
+         * 清空日志
+         */
+        function clearLogs() {
+            const logContent = document.getElementById('logContent');
+            logContent.innerHTML = '<div class="log-entry log-info">[INFO] 日志已清空</div>';
+        }
+        
+        /**
+         * 导出日志
+         */
+        function exportLogs() {
+            const logContent = document.getElementById('logContent');
+            const logs = Array.from(logContent.querySelectorAll('.log-entry'))
+                .map(entry => entry.textContent)
+                .join('\n');
+            
+            const blob = new Blob([logs], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `tesla-test-logs-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
+            a.click();
+            
+            URL.revokeObjectURL(url);
+            log('日志已导出', 'success');
+        }
+    </script>
+</body>
+</html>

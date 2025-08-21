@@ -1,0 +1,33 @@
+{
+  "name": "tesla-webrtc-signal-server",
+  "version": "1.0.0",
+  "description": "WebRTC信令服务器，用于Tesla车机视频播放解决方案",
+  "main": "webrtc-signal-server.js",
+  "scripts": {
+    "start": "node webrtc-signal-server.js",
+    "dev": "nodemon webrtc-signal-server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "webrtc",
+    "signaling",
+    "tesla",
+    "video",
+    "streaming"
+  ],
+  "author": "Tesla LibreTV Enhancement",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "fluent-ffmpeg": "^2.1.3",
+    "http-proxy-middleware": "^3.0.5",
+    "ws": "^8.14.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

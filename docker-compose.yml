@@ -1,19 +1,92 @@
-services:
-  libretv:
-    image: bestzwei/libretv:latest
-    container_name: libretv
-    ports:
-      - "8899:8080" # 将内部 8080 端口映射到主机的 8899 端口
-    environment:
-      - PASSWORD=${PASSWORD:-your_password} # 可将 your_password 修改为你想要的密码，默认为 your_password
-#    volumes:
-#      - libretv_data:/app # 不要修改
-    restart: unless-stopped
+version: '3.8'
 
-#volumes:
-#  libretv_data:
-#    driver: local
-#    driver_opts:
-#      type: none
-#      o: bind
-#      device: ${PWD:-.}/data # 可将 ${PWD:-.} 修改为你想要的路径，默认为当前目录下的 data 文件夹
+services:
+  # 主应用服务
+  libretv:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tesla-libretv
+    ports:
+      - "8080:8080"   # 主服务端口
+      - "3001:3001"   # 代理服务端口
+      - "3002:3002"   # WebRTC服务端口
+    environment:
+      - NODE_ENV=production
+      - TESLA_MODE=true
+      - PORT=8080
+      - PROXY_PORT=3001
+      - WEBRTC_PORT=3002
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=info
+      - CORS_ORIGIN=*
+      - CSP_ENABLED=true
+      - RATE_LIMIT=100
+      - MONITORING_ENABLED=true
+      - PASSWORD=${PASSWORD:-tesla_libretv_2024}
+    volumes:
+      - ./logs:/app/logs
+      - ./cache:/app/cache
+      - ./temp:/app/temp
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - libretv-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Redis 缓存服务
+  redis:
+    image: redis:7-alpine
+    container_name: tesla-libretv-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - libretv-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Nginx 反向代理
+  nginx:
+    image: nginx:alpine
+    container_name: tesla-libretv-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - ./logs/nginx:/var/log/nginx
+    depends_on:
+      - libretv
+    restart: unless-stopped
+    networks:
+      - libretv-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  redis_data:
+    driver: local
+
+networks:
+  libretv-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

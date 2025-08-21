@@ -1,0 +1,255 @@
+{
+  "webrtc": {
+    "iceServers": [
+      {
+        "urls": "stun:stun.l.google.com:19302"
+      },
+      {
+        "urls": "stun:stun1.l.google.com:19302"
+      },
+      {
+        "urls": "stun:stun2.l.google.com:19302"
+      }
+    ],
+    "rtcConfiguration": {
+      "iceTransportPolicy": "all",
+      "bundlePolicy": "max-bundle",
+      "rtcpMuxPolicy": "require",
+      "iceCandidatePoolSize": 10
+    },
+    "mediaConstraints": {
+      "video": {
+        "width": { "ideal": 1280, "max": 1920 },
+        "height": { "ideal": 720, "max": 1080 },
+        "frameRate": { "ideal": 30, "max": 60 },
+        "facingMode": "environment"
+      },
+      "audio": {
+        "echoCancellation": true,
+        "noiseSuppression": true,
+        "autoGainControl": true,
+        "sampleRate": 48000,
+        "channelCount": 2
+      }
+    },
+    "dataChannel": {
+      "ordered": true,
+      "maxRetransmits": 3,
+      "maxPacketLifeTime": 3000
+    },
+    "connection": {
+      "timeout": 30000,
+      "reconnectAttempts": 5,
+      "reconnectDelay": 2000,
+      "heartbeatInterval": 10000
+    }
+  },
+  "proxy": {
+    "server": {
+      "port": 3001,
+      "host": "0.0.0.0",
+      "timeout": 30000,
+      "keepAliveTimeout": 65000,
+      "headersTimeout": 66000,
+      "maxHeaderSize": 16384
+    },
+    "cache": {
+      "enabled": true,
+      "directory": "./cache",
+      "maxSize": "1GB",
+      "maxAge": 3600000,
+      "cleanupInterval": 300000
+    },
+    "transcode": {
+      "ffmpegPath": "ffmpeg",
+      "presets": {
+        "tesla_optimized": {
+          "videoCodec": "libx264",
+          "audioCodec": "aac",
+          "videoBitrate": "2000k",
+          "audioBitrate": "128k",
+          "format": "mp4",
+          "size": "1280x720",
+          "fps": 30,
+          "preset": "fast",
+          "profile": "baseline",
+          "level": "3.1",
+          "pixelFormat": "yuv420p"
+        },
+        "tesla_low_bandwidth": {
+          "videoCodec": "libx264",
+          "audioCodec": "aac",
+          "videoBitrate": "1000k",
+          "audioBitrate": "96k",
+          "format": "mp4",
+          "size": "854x480",
+          "fps": 24,
+          "preset": "faster",
+          "profile": "baseline",
+          "level": "3.0",
+          "pixelFormat": "yuv420p"
+        },
+        "tesla_high_quality": {
+          "videoCodec": "libx264",
+          "audioCodec": "aac",
+          "videoBitrate": "4000k",
+          "audioBitrate": "192k",
+          "format": "mp4",
+          "size": "1920x1080",
+          "fps": 30,
+          "preset": "medium",
+          "profile": "main",
+          "level": "4.0",
+          "pixelFormat": "yuv420p"
+        }
+      },
+      "options": {
+        "threads": 0,
+        "movflags": "+faststart",
+        "tune": "film",
+        "crf": 23,
+        "bufsize": "2000k",
+        "maxrate": "2000k"
+      }
+    },
+    "streaming": {
+      "chunkSize": 1048576,
+      "bufferSize": 8388608,
+      "enableGzip": true,
+      "enableBrotli": true,
+      "cors": {
+        "origin": "*",
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allowedHeaders": ["Content-Type", "Authorization", "Range"],
+        "exposedHeaders": ["Content-Range", "Accept-Ranges", "Content-Length"]
+      }
+    },
+    "rateLimit": {
+      "windowMs": 900000,
+      "max": 1000,
+      "message": "请求过于频繁，请稍后再试",
+      "standardHeaders": true,
+      "legacyHeaders": false
+    }
+  },
+  "tesla": {
+    "compatibility": {
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 Tesla/2021.24.5",
+      "supportedFormats": ["mp4", "webm", "ogg"],
+      "supportedCodecs": {
+        "video": ["h264", "vp8", "vp9"],
+        "audio": ["aac", "mp3", "opus", "vorbis"]
+      },
+      "maxResolution": {
+        "width": 1920,
+        "height": 1080
+      },
+      "maxBitrate": {
+        "video": "4000k",
+        "audio": "192k"
+      },
+      "preferredSettings": {
+        "resolution": "1280x720",
+        "fps": 30,
+        "videoBitrate": "2000k",
+        "audioBitrate": "128k",
+        "format": "mp4",
+        "videoCodec": "h264",
+        "audioCodec": "aac"
+      }
+    },
+    "fallback": {
+      "strategy": "progressive",
+      "methods": [
+        {
+          "name": "webrtc",
+          "priority": 1,
+          "timeout": 10000,
+          "retries": 2
+        },
+        {
+          "name": "proxy",
+          "priority": 2,
+          "timeout": 15000,
+          "retries": 3
+        },
+        {
+          "name": "transcode",
+          "priority": 3,
+          "timeout": 30000,
+          "retries": 2
+        },
+        {
+          "name": "direct",
+          "priority": 4,
+          "timeout": 20000,
+          "retries": 1
+        }
+      ],
+      "conditions": {
+        "networkSpeed": {
+          "fast": "> 10 Mbps",
+          "medium": "1-10 Mbps",
+          "slow": "< 1 Mbps"
+        },
+        "deviceCapability": {
+          "high": "支持硬件解码",
+          "medium": "软件解码",
+          "low": "基础播放"
+        }
+      }
+    },
+    "monitoring": {
+      "enabled": true,
+      "metrics": [
+        "connection_time",
+        "first_frame_time",
+        "buffer_health",
+        "error_rate",
+        "bandwidth_usage",
+        "cpu_usage",
+        "memory_usage"
+      ],
+      "reporting": {
+        "interval": 30000,
+        "endpoint": "/api/metrics",
+        "batchSize": 100
+      }
+    }
+  },
+  "performance": {
+    "optimization": {
+      "enableHardwareAcceleration": true,
+      "enableWebAssembly": true,
+      "enableServiceWorker": true,
+      "enablePrefetch": true,
+      "enableLazyLoading": true,
+      "enableCompression": true
+    },
+    "memory": {
+      "maxVideoBufferSize": 67108864,
+      "maxAudioBufferSize": 16777216,
+      "garbageCollectionInterval": 60000,
+      "memoryWarningThreshold": 0.8
+    },
+    "network": {
+      "connectionTimeout": 10000,
+      "readTimeout": 30000,
+      "maxConcurrentConnections": 6,
+      "retryDelay": 1000,
+      "maxRetries": 3
+    }
+  },
+  "debug": {
+    "enabled": false,
+    "logLevel": "info",
+    "logToConsole": true,
+    "logToFile": false,
+    "logFile": "./logs/tesla-debug.log",
+    "maxLogSize": "10MB",
+    "maxLogFiles": 5,
+    "enablePerformanceMetrics": true,
+    "enableNetworkLogging": false,
+    "enableVideoAnalysis": false
+  }
+}

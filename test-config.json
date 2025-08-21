@@ -1,0 +1,288 @@
+{
+  "testEnvironments": {
+    "tesla_model_s": {
+      "name": "Tesla Model S",
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 Tesla/2021.24.5",
+      "screenResolution": {
+        "width": 1200,
+        "height": 800
+      },
+      "networkConditions": {
+        "downloadThroughput": 1572864,
+        "uploadThroughput": 786432,
+        "latency": 150
+      },
+      "hardwareConstraints": {
+        "maxCpuUsage": 70,
+        "maxMemoryUsage": 80,
+        "maxGpuUsage": 60
+      }
+    },
+    "tesla_model_3": {
+      "name": "Tesla Model 3",
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36 Tesla/2022.8.2",
+      "screenResolution": {
+        "width": 1200,
+        "height": 800
+      },
+      "networkConditions": {
+        "downloadThroughput": 2097152,
+        "uploadThroughput": 1048576,
+        "latency": 120
+      },
+      "hardwareConstraints": {
+        "maxCpuUsage": 75,
+        "maxMemoryUsage": 85,
+        "maxGpuUsage": 65
+      }
+    },
+    "tesla_model_y": {
+      "name": "Tesla Model Y",
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36 Tesla/2022.12.1",
+      "screenResolution": {
+        "width": 1200,
+        "height": 800
+      },
+      "networkConditions": {
+        "downloadThroughput": 2621440,
+        "uploadThroughput": 1310720,
+        "latency": 100
+      },
+      "hardwareConstraints": {
+        "maxCpuUsage": 80,
+        "maxMemoryUsage": 90,
+        "maxGpuUsage": 70
+      }
+    },
+    "tesla_cybertruck": {
+      "name": "Tesla Cybertruck",
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36 Tesla/2023.6.1",
+      "screenResolution": {
+        "width": 1440,
+        "height": 900
+      },
+      "networkConditions": {
+        "downloadThroughput": 3145728,
+        "uploadThroughput": 1572864,
+        "latency": 80
+      },
+      "hardwareConstraints": {
+        "maxCpuUsage": 85,
+        "maxMemoryUsage": 95,
+        "maxGpuUsage": 80
+      }
+    }
+  },
+  "testVideos": {
+    "short_videos": [
+      {
+        "name": "Big Buck Bunny (短片)",
+        "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+        "duration": 596,
+        "resolution": "1920x1080",
+        "bitrate": "8000kbps",
+        "format": "mp4"
+      },
+      {
+        "name": "Elephants Dream (短片)",
+        "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+        "duration": 653,
+        "resolution": "1920x1080",
+        "bitrate": "6000kbps",
+        "format": "mp4"
+      }
+    ],
+    "medium_videos": [
+      {
+        "name": "For Bigger Blazes",
+        "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+        "duration": 15,
+        "resolution": "1920x1080",
+        "bitrate": "10000kbps",
+        "format": "mp4"
+      },
+      {
+        "name": "Sintel",
+        "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
+        "duration": 888,
+        "resolution": "1920x1080",
+        "bitrate": "7000kbps",
+        "format": "mp4"
+      }
+    ],
+    "high_quality_videos": [
+      {
+        "name": "Tears of Steel (4K)",
+        "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+        "duration": 734,
+        "resolution": "3840x2160",
+        "bitrate": "20000kbps",
+        "format": "mp4"
+      }
+    ],
+    "streaming_videos": [
+      {
+        "name": "HLS Test Stream",
+        "url": "https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8",
+        "type": "hls",
+        "adaptive": true
+      },
+      {
+        "name": "DASH Test Stream",
+        "url": "https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.mpd",
+        "type": "dash",
+        "adaptive": true
+      }
+    ]
+  },
+  "testScenarios": {
+    "basic_compatibility": {
+      "name": "基础兼容性测试",
+      "description": "测试基本的视频播放功能",
+      "tests": [
+        "environment_check",
+        "proxy_connection",
+        "direct_playback",
+        "proxy_playback"
+      ],
+      "timeout": 30000,
+      "retryAttempts": 2
+    },
+    "advanced_features": {
+      "name": "高级功能测试",
+      "description": "测试转码、WebRTC等高级功能",
+      "tests": [
+        "transcode_playback",
+        "webrtc_playback",
+        "smart_fallback",
+        "adaptive_streaming"
+      ],
+      "timeout": 45000,
+      "retryAttempts": 3
+    },
+    "performance_stress": {
+      "name": "性能压力测试",
+      "description": "测试系统在高负载下的表现",
+      "tests": [
+        "performance_stress",
+        "memory_leak_detection",
+        "cpu_usage_monitoring",
+        "long_playback"
+      ],
+      "timeout": 120000,
+      "retryAttempts": 1
+    },
+    "network_resilience": {
+      "name": "网络弹性测试",
+      "description": "测试网络中断和恢复能力",
+      "tests": [
+        "network_recovery",
+        "bandwidth_adaptation",
+        "connection_stability"
+      ],
+      "timeout": 60000,
+      "retryAttempts": 2
+    },
+    "full_suite": {
+      "name": "完整测试套件",
+      "description": "运行所有测试项目",
+      "tests": [
+        "environment_check",
+        "proxy_connection",
+        "direct_playback",
+        "proxy_playback",
+        "transcode_playback",
+        "webrtc_playback",
+        "smart_fallback",
+        "performance_stress",
+        "network_recovery",
+        "long_playback"
+      ],
+      "timeout": 180000,
+      "retryAttempts": 2
+    }
+  },
+  "serverConfiguration": {
+    "proxyServer": {
+      "url": "http://localhost:3001",
+      "endpoints": {
+        "status": "/status",
+        "proxy": "/proxy",
+        "transcode": "/transcode",
+        "stream": "/stream",
+        "cache": "/cache"
+      }
+    },
+    "signalServer": {
+      "url": "ws://localhost:8080/signal",
+      "fallbackUrls": [
+        "ws://localhost:8081/signal",
+        "ws://127.0.0.1:8080/signal"
+      ]
+    },
+    "stunServers": [
+      "stun:stun.l.google.com:19302",
+      "stun:stun1.l.google.com:19302",
+      "stun:stun2.l.google.com:19302"
+    ]
+  },
+  "testParameters": {
+    "timeouts": {
+      "default": 30000,
+      "connection": 10000,
+      "playback": 15000,
+      "transcode": 60000,
+      "performance": 120000
+    },
+    "thresholds": {
+      "maxCpuUsage": 80,
+      "maxMemoryIncrease": 100,
+      "maxLatency": 200,
+      "minSuccessRate": 0.8,
+      "maxDroppedFrames": 10
+    },
+    "networkSimulation": {
+      "scenarios": [
+        {
+          "name": "高速网络",
+          "bandwidth": 5000000,
+          "latency": 50,
+          "packetLoss": 0
+        },
+        {
+          "name": "中速网络",
+          "bandwidth": 2000000,
+          "latency": 100,
+          "packetLoss": 0.1
+        },
+        {
+          "name": "低速网络",
+          "bandwidth": 500000,
+          "latency": 200,
+          "packetLoss": 0.5
+        },
+        {
+          "name": "不稳定网络",
+          "bandwidth": 1000000,
+          "latency": 300,
+          "packetLoss": 2.0
+        }
+      ]
+    }
+  },
+  "reportConfiguration": {
+    "outputFormats": ["json", "html", "csv"],
+    "includeDetails": true,
+    "includeScreenshots": false,
+    "includePerformanceMetrics": true,
+    "autoExport": true,
+    "exportPath": "./test-reports/"
+  },
+  "debugConfiguration": {
+    "enableConsoleLogging": true,
+    "enablePerformanceLogging": true,
+    "enableNetworkLogging": true,
+    "logLevel": "info",
+    "saveDebugLogs": true
+  }
+}

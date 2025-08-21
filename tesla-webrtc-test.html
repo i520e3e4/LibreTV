@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tesla WebRTC视频播放测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .test-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .video-container {
+            width: 100%;
+            height: 400px;
+            background: #000;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .video-placeholder {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #666;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-success {
+            background: linear-gradient(45deg, #56ab2f 0%, #a8e6cf 100%);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(86, 171, 47, 0.4);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(45deg, #ff416c 0%, #ff4b2b 100%);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 65, 108, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+        
+        .status-panel {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .status-item:last-child {
+            border-bottom: none;
+        }
+        
+        .status-label {
+            font-weight: 600;
+        }
+        
+        .status-value {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .status-connected {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .status-disconnected {
+            background: #f44336;
+            color: white;
+        }
+        
+        .status-connecting {
+            background: #ff9800;
+            color: white;
+        }
+        
+        .log-panel {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            padding: 20px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-radius: 3px;
+        }
+        
+        .log-info {
+            color: #81C784;
+        }
+        
+        .log-error {
+            background: rgba(244, 67, 54, 0.2);
+            color: #FFCDD2;
+        }
+        
+        .log-warning {
+            background: rgba(255, 152, 0, 0.2);
+            color: #FFE0B2;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .input-group input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+        }
+        
+        .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.3);
+        }
+        
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+            
+            .input-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚗 Tesla WebRTC视频播放测试</h1>
+            <p>测试基于WebRTC的视频流解决方案，绕过特斯拉车机HTML5视频限制</p>
+        </div>
+        
+        <div class="test-section">
+            <h2>📺 视频播放区域</h2>
+            <div class="video-container" id="videoContainer">
+                <div class="video-placeholder">
+                    <h3>等待视频流...</h3>
+                    <p>WebRTC连接建立后，视频将在此处显示</p>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <input type="text" id="signalServerUrl" placeholder="信令服务器地址" value="ws://localhost:8080/signal">
+                <input type="text" id="roomId" placeholder="房间ID" value="tesla-test-room">
+            </div>
+            
+            <div class="controls">
+                <button class="btn btn-primary" id="connectBtn">连接服务器</button>
+                <button class="btn btn-success" id="startStreamBtn" disabled>开始视频流</button>
+                <button class="btn btn-danger" id="stopBtn" disabled>停止连接</button>
+                <button class="btn btn-primary" id="clearLogBtn">清空日志</button>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>📊 连接状态</h2>
+            <div class="status-panel">
+                <div class="status-item">
+                    <span class="status-label">信令服务器:</span>
+                    <span class="status-value status-disconnected" id="signalStatus">未连接</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">WebRTC连接:</span>
+                    <span class="status-value status-disconnected" id="webrtcStatus">未连接</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">视频流:</span>
+                    <span class="status-value status-disconnected" id="videoStatus">未播放</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">客户端ID:</span>
+                    <span class="status-value" id="clientId">-</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">房间ID:</span>
+                    <span class="status-value" id="currentRoom">-</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>📝 实时日志</h2>
+            <div class="log-panel" id="logPanel">
+                <div class="log-entry log-info">[系统] Tesla WebRTC测试页面已加载</div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/tesla-webrtc-player.js"></script>
+    <script>
+        class TeslaWebRTCTest {
+            constructor() {
+                this.player = null;
+                this.isConnected = false;
+                
+                this.initElements();
+                this.bindEvents();
+                this.log('测试页面初始化完成', 'info');
+            }
+            
+            initElements() {
+                this.elements = {
+                    signalServerUrl: document.getElementById('signalServerUrl'),
+                    roomId: document.getElementById('roomId'),
+                    connectBtn: document.getElementById('connectBtn'),
+                    startStreamBtn: document.getElementById('startStreamBtn'),
+                    stopBtn: document.getElementById('stopBtn'),
+                    clearLogBtn: document.getElementById('clearLogBtn'),
+                    videoContainer: document.getElementById('videoContainer'),
+                    logPanel: document.getElementById('logPanel'),
+                    signalStatus: document.getElementById('signalStatus'),
+                    webrtcStatus: document.getElementById('webrtcStatus'),
+                    videoStatus: document.getElementById('videoStatus'),
+                    clientId: document.getElementById('clientId'),
+                    currentRoom: document.getElementById('currentRoom')
+                };
+            }
+            
+            bindEvents() {
+                this.elements.connectBtn.addEventListener('click', () => this.connect());
+                this.elements.startStreamBtn.addEventListener('click', () => this.startStream());
+                this.elements.stopBtn.addEventListener('click', () => this.disconnect());
+                this.elements.clearLogBtn.addEventListener('click', () => this.clearLog());
+            }
+            
+            async connect() {
+                try {
+                    const signalServerUrl = this.elements.signalServerUrl.value.trim();
+                    const roomId = this.elements.roomId.value.trim();
+                    
+                    if (!signalServerUrl || !roomId) {
+                        this.log('请填写信令服务器地址和房间ID', 'error');
+                        return;
+                    }
+                    
+                    this.log(`正在连接到信令服务器: ${signalServerUrl}`, 'info');
+                    this.updateStatus('signal', 'connecting', '连接中...');
+                    
+                    this.player = new TeslaWebRTCPlayer({
+                        container: this.elements.videoContainer,
+                        signalServerUrl: signalServerUrl,
+                        roomId: roomId,
+                        debug: true,
+                        onReady: () => {
+                            this.log('WebRTC播放器初始化完成', 'info');
+                        },
+                        onError: (error) => {
+                            this.log(`错误: ${error.message}`, 'error');
+                            this.updateStatus('signal', 'disconnected', '连接失败');
+                        },
+                        onStatusChange: (status) => {
+                            this.handleStatusChange(status);
+                        },
+                        onVideoReceived: () => {
+                            this.log('视频流接收成功', 'info');
+                            this.updateStatus('video', 'connected', '正在播放');
+                        }
+                    });
+                    
+                    this.elements.connectBtn.disabled = true;
+                    this.elements.startStreamBtn.disabled = false;
+                    this.elements.stopBtn.disabled = false;
+                    
+                } catch (error) {
+                    this.log(`连接失败: ${error.message}`, 'error');
+                    this.updateStatus('signal', 'disconnected', '连接失败');
+                }
+            }
+            
+            async startStream() {
+                try {
+                    if (!this.player) {
+                        this.log('请先连接到信令服务器', 'error');
+                        return;
+                    }
+                    
+                    this.log('请求开始视频流...', 'info');
+                    
+                    // 发送播放视频请求
+                    this.player.sendSignalMessage({
+                        type: 'play-video',
+                        videoUrl: 'test-stream'
+                    });
+                    
+                } catch (error) {
+                    this.log(`开始视频流失败: ${error.message}`, 'error');
+                }
+            }
+            
+            async disconnect() {
+                try {
+                    if (this.player) {
+                        this.log('正在断开连接...', 'info');
+                        await this.player.destroy();
+                        this.player = null;
+                    }
+                    
+                    this.updateStatus('signal', 'disconnected', '未连接');
+                    this.updateStatus('webrtc', 'disconnected', '未连接');
+                    this.updateStatus('video', 'disconnected', '未播放');
+                    
+                    this.elements.clientId.textContent = '-';
+                    this.elements.currentRoom.textContent = '-';
+                    
+                    this.elements.connectBtn.disabled = false;
+                    this.elements.startStreamBtn.disabled = true;
+                    this.elements.stopBtn.disabled = true;
+                    
+                    this.log('连接已断开', 'info');
+                    
+                } catch (error) {
+                    this.log(`断开连接失败: ${error.message}`, 'error');
+                }
+            }
+            
+            handleStatusChange(status) {
+                this.log(`状态变化: ${status}`, 'info');
+                
+                switch (status) {
+                    case 'connected':
+                        this.updateStatus('signal', 'connected', '已连接');
+                        this.elements.currentRoom.textContent = this.elements.roomId.value;
+                        if (this.player && this.player.clientId) {
+                            this.elements.clientId.textContent = this.player.clientId;
+                        }
+                        break;
+                        
+                    case 'disconnected':
+                        this.updateStatus('signal', 'disconnected', '已断开');
+                        break;
+                        
+                    case 'connecting':
+                        this.updateStatus('webrtc', 'connecting', '连接中...');
+                        break;
+                        
+                    case 'connected':
+                        this.updateStatus('webrtc', 'connected', '已连接');
+                        break;
+                        
+                    case 'playing':
+                        this.updateStatus('video', 'connected', '正在播放');
+                        break;
+                        
+                    case 'failed':
+                        this.updateStatus('webrtc', 'disconnected', '连接失败');
+                        break;
+                }
+            }
+            
+            updateStatus(type, status, text) {
+                let element;
+                switch (type) {
+                    case 'signal':
+                        element = this.elements.signalStatus;
+                        break;
+                    case 'webrtc':
+                        element = this.elements.webrtcStatus;
+                        break;
+                    case 'video':
+                        element = this.elements.videoStatus;
+                        break;
+                }
+                
+                if (element) {
+                    element.textContent = text;
+                    element.className = `status-value status-${status}`;
+                }
+            }
+            
+            log(message, type = 'info') {
+                const timestamp = new Date().toLocaleTimeString();
+                const logEntry = document.createElement('div');
+                logEntry.className = `log-entry log-${type}`;
+                logEntry.textContent = `[${timestamp}] ${message}`;
+                
+                this.elements.logPanel.appendChild(logEntry);
+                this.elements.logPanel.scrollTop = this.elements.logPanel.scrollHeight;
+                
+                // 控制台也输出
+                console.log(`[Tesla WebRTC Test] ${message}`);
+            }
+            
+            clearLog() {
+                this.elements.logPanel.innerHTML = '<div class="log-entry log-info">[系统] 日志已清空</div>';
+            }
+        }
+        
+        // 页面加载完成后初始化测试
+        document.addEventListener('DOMContentLoaded', () => {
+            window.teslaWebRTCTest = new TeslaWebRTCTest();
+        });
+    </script>
+</body>
+</html>

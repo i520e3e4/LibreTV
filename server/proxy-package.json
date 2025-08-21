@@ -1,0 +1,40 @@
+{
+  "name": "tesla-proxy-server",
+  "version": "1.0.0",
+  "description": "Tesla车机视频代理服务器，用于绕过播放限制",
+  "main": "tesla-proxy-server.js",
+  "scripts": {
+    "start": "node tesla-proxy-server.js",
+    "dev": "nodemon tesla-proxy-server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "tesla",
+    "proxy",
+    "video",
+    "streaming",
+    "transcode"
+  ],
+  "author": "Tesla WebRTC Team",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "http-proxy-middleware": "^2.0.6",
+    "fluent-ffmpeg": "^2.1.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-repo/tesla-proxy-server.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-repo/tesla-proxy-server/issues"
+  },
+  "homepage": "https://github.com/your-repo/tesla-proxy-server#readme"
+}

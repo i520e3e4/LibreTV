@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tesla车机视频播放综合测试</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+            padding: 25px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+        
+        .section h2 {
+            margin-top: 0;
+            color: #495057;
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 10px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ced4da;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #80bdff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.25);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,123,255,0.4);
+        }
+        
+        .btn-success {
+            background: linear-gradient(45deg, #28a745, #1e7e34);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40,167,69,0.4);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(45deg, #ffc107, #e0a800);
+            color: #212529;
+        }
+        
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255,193,7,0.4);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(45deg, #dc3545, #c82333);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(220,53,69,0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .status.online {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.offline {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status.testing {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .log-container {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 5px 0;
+            border-bottom: 1px solid #4a5568;
+        }
+        
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        
+        .log-timestamp {
+            color: #a0aec0;
+            font-size: 12px;
+        }
+        
+        .log-level {
+            font-weight: bold;
+            margin: 0 10px;
+        }
+        
+        .log-level.info { color: #63b3ed; }
+        .log-level.success { color: #68d391; }
+        .log-level.warning { color: #fbd38d; }
+        .log-level.error { color: #fc8181; }
+        
+        .video-container {
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .video-container video {
+            width: 100%;
+            height: auto;
+            max-height: 500px;
+        }
+        
+        .video-placeholder {
+            color: #6c757d;
+            font-size: 18px;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #28a745, #20c997);
+            width: 0%;
+            transition: width 0.3s;
+            border-radius: 10px;
+        }
+        
+        .method-indicator {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .method-webrtc {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .method-proxy {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+        
+        .method-transcode {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+        
+        .method-direct {
+            background: #e8f5e8;
+            color: #388e3c;
+        }
+        
+        @media (max-width: 768px) {
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚗 Tesla车机视频播放综合测试</h1>
+            <p>WebRTC + 代理服务器 + 自动降级机制</p>
+        </div>
+        
+        <div class="content">
+            <!-- 系统状态 -->
+            <div class="section">
+                <h2>🔍 系统状态检查</h2>
+                <div id="webrtc-status" class="status offline">WebRTC状态: 检查中...</div>
+                <div id="proxy-status" class="status offline">代理服务器状态: 检查中...</div>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="checkAllStatus()">🔄 刷新状态</button>
+                    <button class="btn btn-warning" onclick="clearLogs()">🗑️ 清空日志</button>
+                </div>
+            </div>
+            
+            <!-- 视频测试 -->
+            <div class="section">
+                <h2>🎥 视频播放测试</h2>
+                <div class="input-group">
+                    <label for="video-url">视频URL:</label>
+                    <input type="url" id="video-url" placeholder="输入要测试的视频URL" 
+                           value="https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4">
+                </div>
+                
+                <div class="input-group">
+                    <label for="play-method">播放方式:</label>
+                    <select id="play-method">
+                        <option value="auto">🤖 自动选择最佳方案</option>
+                        <option value="webrtc">📡 WebRTC流媒体</option>
+                        <option value="proxy">🔄 代理服务器</option>
+                        <option value="transcode">🎬 转码播放</option>
+                        <option value="direct">🎯 直接播放</option>
+                    </select>
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn btn-success" onclick="startVideoTest()">▶️ 开始播放测试</button>
+                    <button class="btn btn-danger" onclick="stopVideoTest()">⏹️ 停止播放</button>
+                    <button class="btn btn-warning" onclick="runComprehensiveTest()">🧪 综合测试</button>
+                </div>
+                
+                <div id="current-method" style="margin-bottom: 15px;"></div>
+                
+                <div class="progress-bar">
+                    <div id="progress-fill" class="progress-fill"></div>
+                </div>
+                <div id="progress-text" style="font-size: 14px; color: #6c757d;">等待开始...</div>
+                
+                <div class="video-container" id="video-container">
+                    <div class="video-placeholder">📺 视频将在这里显示</div>
+                </div>
+            </div>
+            
+            <!-- WebRTC配置 -->
+            <div class="section">
+                <h2>📡 WebRTC配置</h2>
+                <div class="input-group">
+                    <label for="signal-server">信令服务器地址:</label>
+                    <input type="text" id="signal-server" value="ws://localhost:8080/signal">
+                </div>
+                
+                <div class="input-group">
+                    <label for="room-id">房间ID:</label>
+                    <input type="text" id="room-id" value="tesla-test-room">
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="connectWebRTC()">🔗 连接WebRTC</button>
+                    <button class="btn btn-danger" onclick="disconnectWebRTC()">❌ 断开连接</button>
+                </div>
+            </div>
+            
+            <!-- 代理服务器配置 -->
+            <div class="section">
+                <h2>🔄 代理服务器配置</h2>
+                <div class="input-group">
+                    <label for="proxy-server">代理服务器地址:</label>
+                    <input type="text" id="proxy-server" value="http://localhost:3001">
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="testProxyServer()">🧪 测试代理服务器</button>
+                    <button class="btn btn-warning" onclick="clearProxyCache()">🗑️ 清理缓存</button>
+                </div>
+            </div>
+            
+            <!-- 实时日志 -->
+            <div class="section">
+                <h2>📋 实时日志</h2>
+                <div id="log-container" class="log-container">
+                    <div class="log-entry">
+                        <span class="log-timestamp">[系统启动]</span>
+                        <span class="log-level info">[INFO]</span>
+                        Tesla车机视频播放综合测试系统已启动
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 引入依赖脚本 -->
+    <script src="js/tesla-webrtc-player.js"></script>
+    <script src="js/tesla-proxy-client.js"></script>
+    
+    <script>
+        // 全局变量
+        let webrtcPlayer = null;
+        let proxyClient = null;
+        let currentVideo = null;
+        let testResults = {};
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeClients();
+            checkAllStatus();
+        });
+        
+        // 初始化客户端
+        function initializeClients() {
+            try {
+                // 初始化WebRTC播放器
+                webrtcPlayer = new TeslaWebRTCPlayer({
+                    signalServerUrl: document.getElementById('signal-server').value,
+                    roomId: document.getElementById('room-id').value,
+                    debug: true,
+                    onConnected: () => {
+                        log('WebRTC连接成功', 'success');
+                        updateWebRTCStatus(true);
+                    },
+                    onDisconnected: () => {
+                        log('WebRTC连接断开', 'warning');
+                        updateWebRTCStatus(false);
+                    },
+                    onError: (error) => {
+                        log(`WebRTC错误: ${error.message}`, 'error');
+                        updateWebRTCStatus(false);
+                    },
+                    onVideoReceived: (stream) => {
+                        log('收到WebRTC视频流', 'success');
+                        displayVideoStream(stream);
+                    }
+                });
+                
+                // 初始化代理客户端
+                proxyClient = new TeslaProxyClient({
+                    proxyServerUrl: document.getElementById('proxy-server').value,
+                    debug: true,
+                    onProgress: (progress) => {
+                        updateProgress(progress.percent || 0, progress.message);
+                        log(progress.message, 'info');
+                    },
+                    onError: (error) => {
+                        log(`代理客户端错误: ${error.message}`, 'error');
+                    },
+                    onSuccess: (result) => {
+                        log(`代理客户端成功: ${result.message}`, 'success');
+                    }
+                });
+                
+                log('客户端初始化完成', 'success');
+                
+            } catch (error) {
+                log(`客户端初始化失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // 检查所有状态
+        async function checkAllStatus() {
+            log('开始检查系统状态...', 'info');
+            
+            // 检查WebRTC状态
+            try {
+                const webrtcSupported = !!(navigator.mediaDevices && 
+                    navigator.mediaDevices.getUserMedia && 
+                    window.RTCPeerConnection);
+                updateWebRTCStatus(webrtcSupported);
+                
+                if (webrtcSupported) {
+                    log('WebRTC支持检查通过', 'success');
+                } else {
+                    log('浏览器不支持WebRTC', 'warning');
+                }
+            } catch (error) {
+                log(`WebRTC状态检查失败: ${error.message}`, 'error');
+                updateWebRTCStatus(false);
+            }
+            
+            // 检查代理服务器状态
+            try {
+                const proxyStatus = await proxyClient.checkServerStatus();
+                updateProxyStatus(proxyStatus.online);
+                
+                if (proxyStatus.online) {
+                    log('代理服务器在线', 'success');
+                } else {
+                    log(`代理服务器离线: ${proxyStatus.error}`, 'warning');
+                }
+            } catch (error) {
+                log(`代理服务器状态检查失败: ${error.message}`, 'error');
+                updateProxyStatus(false);
+            }
+        }
+        
+        // 开始视频测试
+        async function startVideoTest() {
+            const videoUrl = document.getElementById('video-url').value;
+            const playMethod = document.getElementById('play-method').value;
+            
+            if (!videoUrl) {
+                log('请输入视频URL', 'error');
+                return;
+            }
+            
+            log(`开始视频播放测试: ${playMethod}`, 'info');
+            updateProgress(0, '准备播放...');
+            
+            try {
+                let selectedMethod = playMethod;
+                let finalUrl = videoUrl;
+                
+                // 自动选择最佳方案
+                if (playMethod === 'auto') {
+                    const bestOption = await selectBestPlaybackMethod(videoUrl);
+                    selectedMethod = bestOption.method;
+                    finalUrl = bestOption.url;
+                    log(`自动选择播放方案: ${selectedMethod} - ${bestOption.reason}`, 'info');
+                }
+                
+                // 显示当前使用的方法
+                updateCurrentMethod(selectedMethod);
+                
+                // 根据选择的方法播放视频
+                switch (selectedMethod) {
+                    case 'webrtc':
+                        await playWithWebRTC(videoUrl);
+                        break;
+                    case 'proxy':
+                        await playWithProxy(videoUrl, false);
+                        break;
+                    case 'transcode':
+                        await playWithProxy(videoUrl, true);
+                        break;
+                    case 'direct':
+                    default:
+                        await playDirect(videoUrl);
+                        break;
+                }
+                
+            } catch (error) {
+                log(`视频播放失败: ${error.message}`, 'error');
+                updateProgress(0, '播放失败');
+            }
+        }
+        
+        // 选择最佳播放方法
+        async function selectBestPlaybackMethod(videoUrl) {
+            // 检查WebRTC可用性
+            const webrtcAvailable = webrtcPlayer && document.getElementById('webrtc-status').classList.contains('online');
+            
+            // 检查代理服务器可用性
+            const proxyAvailable = document.getElementById('proxy-status').classList.contains('online');
+            
+            if (webrtcAvailable) {
+                return {
+                    method: 'webrtc',
+                    url: videoUrl,
+                    reason: 'WebRTC可用，优先使用流媒体方案'
+                };
+            }
+            
+            if (proxyAvailable) {
+                try {
+                    return await proxyClient.getBestPlaybackOption(videoUrl);
+                } catch (error) {
+                    log(`代理方案选择失败: ${error.message}`, 'warning');
+                }
+            }
+            
+            return {
+                method: 'direct',
+                url: videoUrl,
+                reason: '所有代理方案不可用，使用直接播放'
+            };
+        }
+        
+        // WebRTC播放
+        async function playWithWebRTC(videoUrl) {
+            if (!webrtcPlayer) {
+                throw new Error('WebRTC播放器未初始化');
+            }
+            
+            log('使用WebRTC播放视频', 'info');
+            updateProgress(25, '连接WebRTC服务器...');
+            
+            await webrtcPlayer.connect();
+            updateProgress(50, '请求视频流...');
+            
+            // 发送播放视频请求
+            await webrtcPlayer.requestVideo(videoUrl);
+            updateProgress(100, 'WebRTC播放就绪');
+        }
+        
+        // 代理播放
+        async function playWithProxy(videoUrl, useTranscode = false) {
+            if (!proxyClient) {
+                throw new Error('代理客户端未初始化');
+            }
+            
+            const method = useTranscode ? '转码播放' : '代理播放';
+            log(`使用${method}`, 'info');
+            updateProgress(25, `准备${method}...`);
+            
+            const container = document.getElementById('video-container');
+            container.innerHTML = '';
+            
+            updateProgress(50, '创建视频元素...');
+            
+            currentVideo = proxyClient.createProxyVideo(videoUrl, container, {
+                useTranscode,
+                format: 'mp4',
+                quality: '720p',
+                controls: true,
+                autoplay: false
+            });
+            
+            updateProgress(100, `${method}准备就绪`);
+        }
+        
+        // 直接播放
+        async function playDirect(videoUrl) {
+            log('使用直接播放', 'info');
+            updateProgress(25, '创建视频元素...');
+            
+            const container = document.getElementById('video-container');
+            container.innerHTML = '';
+            
+            const video = document.createElement('video');
+            video.src = videoUrl;
+            video.controls = true;
+            video.style.width = '100%';
+            video.style.height = 'auto';
+            
+            video.addEventListener('loadstart', () => {
+                updateProgress(50, '开始加载视频...');
+            });
+            
+            video.addEventListener('canplay', () => {
+                updateProgress(100, '直接播放就绪');
+            });
+            
+            video.addEventListener('error', (e) => {
+                log(`直接播放失败: ${e.target.error?.message || '未知错误'}`, 'error');
+                updateProgress(0, '播放失败');
+            });
+            
+            container.appendChild(video);
+            currentVideo = video;
+        }
+        
+        // 停止视频测试
+        function stopVideoTest() {
+            log('停止视频播放', 'info');
+            
+            if (currentVideo) {
+                currentVideo.pause();
+                currentVideo.src = '';
+                currentVideo = null;
+            }
+            
+            const container = document.getElementById('video-container');
+            container.innerHTML = '<div class="video-placeholder">📺 视频将在这里显示</div>';
+            
+            updateProgress(0, '已停止');
+            updateCurrentMethod('');
+        }
+        
+        // 综合测试
+        async function runComprehensiveTest() {
+            log('开始综合测试...', 'info');
+            const testUrl = document.getElementById('video-url').value;
+            
+            if (!testUrl) {
+                log('请输入测试视频URL', 'error');
+                return;
+            }
+            
+            testResults = {};
+            
+            // 测试直接播放
+            try {
+                log('测试直接播放...', 'info');
+                const directResult = await testDirectPlayback(testUrl);
+                testResults.direct = directResult;
+                log(`直接播放测试: ${directResult.success ? '成功' : '失败'}`, directResult.success ? 'success' : 'error');
+            } catch (error) {
+                testResults.direct = { success: false, error: error.message };
+                log(`直接播放测试失败: ${error.message}`, 'error');
+            }
+            
+            // 测试代理播放
+            if (document.getElementById('proxy-status').classList.contains('online')) {
+                try {
+                    log('测试代理播放...', 'info');
+                    const proxyResult = await proxyClient.testProxy(testUrl);
+                    testResults.proxy = { success: true, result: proxyResult };
+                    log('代理播放测试成功', 'success');
+                } catch (error) {
+                    testResults.proxy = { success: false, error: error.message };
+                    log(`代理播放测试失败: ${error.message}`, 'error');
+                }
+            }
+            
+            // 测试WebRTC
+            if (document.getElementById('webrtc-status').classList.contains('online')) {
+                try {
+                    log('测试WebRTC连接...', 'info');
+                    await webrtcPlayer.connect();
+                    testResults.webrtc = { success: true, connected: true };
+                    log('WebRTC连接测试成功', 'success');
+                    await webrtcPlayer.disconnect();
+                } catch (error) {
+                    testResults.webrtc = { success: false, error: error.message };
+                    log(`WebRTC测试失败: ${error.message}`, 'error');
+                }
+            }
+            
+            // 输出测试结果
+            log('=== 综合测试结果 ===', 'info');
+            Object.keys(testResults).forEach(method => {
+                const result = testResults[method];
+                log(`${method}: ${result.success ? '✅ 通过' : '❌ 失败'}`, result.success ? 'success' : 'error');
+            });
+            
+            log('综合测试完成', 'success');
+        }
+        
+        // 测试直接播放
+        function testDirectPlayback(url) {
+            return new Promise((resolve) => {
+                const video = document.createElement('video');
+                video.style.display = 'none';
+                
+                const timeout = setTimeout(() => {
+                    resolve({ success: false, error: '加载超时' });
+                }, 10000);
+                
+                video.addEventListener('canplay', () => {
+                    clearTimeout(timeout);
+                    resolve({ success: true });
+                });
+                
+                video.addEventListener('error', (e) => {
+                    clearTimeout(timeout);
+                    resolve({ success: false, error: e.target.error?.message || '加载失败' });
+                });
+                
+                video.src = url;
+                document.body.appendChild(video);
+                
+                setTimeout(() => {
+                    document.body.removeChild(video);
+                }, 11000);
+            });
+        }
+        
+        // WebRTC连接
+        async function connectWebRTC() {
+            if (!webrtcPlayer) {
+                log('WebRTC播放器未初始化', 'error');
+                return;
+            }
+            
+            try {
+                log('连接WebRTC服务器...', 'info');
+                await webrtcPlayer.connect();
+            } catch (error) {
+                log(`WebRTC连接失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // WebRTC断开
+        async function disconnectWebRTC() {
+            if (!webrtcPlayer) {
+                return;
+            }
+            
+            try {
+                log('断开WebRTC连接...', 'info');
+                await webrtcPlayer.disconnect();
+            } catch (error) {
+                log(`WebRTC断开失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // 测试代理服务器
+        async function testProxyServer() {
+            if (!proxyClient) {
+                log('代理客户端未初始化', 'error');
+                return;
+            }
+            
+            try {
+                log('测试代理服务器...', 'info');
+                const testUrl = 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4';
+                const result = await proxyClient.testProxy(testUrl);
+                log('代理服务器测试成功', 'success');
+            } catch (error) {
+                log(`代理服务器测试失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // 清理代理缓存
+        async function clearProxyCache() {
+            if (!proxyClient) {
+                log('代理客户端未初始化', 'error');
+                return;
+            }
+            
+            try {
+                log('清理代理缓存...', 'info');
+                await proxyClient.clearCache();
+                log('代理缓存清理完成', 'success');
+            } catch (error) {
+                log(`清理代理缓存失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // 显示视频流
+        function displayVideoStream(stream) {
+            const container = document.getElementById('video-container');
+            container.innerHTML = '';
+            
+            const video = document.createElement('video');
+            video.srcObject = stream;
+            video.autoplay = true;
+            video.controls = true;
+            video.style.width = '100%';
+            video.style.height = 'auto';
+            
+            container.appendChild(video);
+            currentVideo = video;
+        }
+        
+        // 更新WebRTC状态
+        function updateWebRTCStatus(online) {
+            const statusEl = document.getElementById('webrtc-status');
+            statusEl.className = `status ${online ? 'online' : 'offline'}`;
+            statusEl.textContent = `WebRTC状态: ${online ? '✅ 可用' : '❌ 不可用'}`;
+        }
+        
+        // 更新代理状态
+        function updateProxyStatus(online) {
+            const statusEl = document.getElementById('proxy-status');
+            statusEl.className = `status ${online ? 'online' : 'offline'}`;
+            statusEl.textContent = `代理服务器状态: ${online ? '✅ 在线' : '❌ 离线'}`;
+        }
+        
+        // 更新当前方法
+        function updateCurrentMethod(method) {
+            const methodEl = document.getElementById('current-method');
+            if (!method) {
+                methodEl.innerHTML = '';
+                return;
+            }
+            
+            const methodNames = {
+                webrtc: 'WebRTC流媒体',
+                proxy: '代理服务器',
+                transcode: '转码播放',
+                direct: '直接播放'
+            };
+            
+            const methodClasses = {
+                webrtc: 'method-webrtc',
+                proxy: 'method-proxy',
+                transcode: 'method-transcode',
+                direct: 'method-direct'
+            };
+            
+            methodEl.innerHTML = `当前播放方式: <span class="method-indicator ${methodClasses[method]}">${methodNames[method] || method}</span>`;
+        }
+        
+        // 更新进度
+        function updateProgress(percent, message) {
+            const fillEl = document.getElementById('progress-fill');
+            const textEl = document.getElementById('progress-text');
+            
+            fillEl.style.width = `${percent}%`;
+            textEl.textContent = message || `${percent}%`;
+        }
+        
+        // 日志记录
+        function log(message, level = 'info') {
+            const logContainer = document.getElementById('log-container');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.innerHTML = `
+                <span class="log-timestamp">[${timestamp}]</span>
+                <span class="log-level ${level}">[${level.toUpperCase()}]</span>
+                ${message}
+            `;
+            
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            // 限制日志条数
+            const entries = logContainer.querySelectorAll('.log-entry');
+            if (entries.length > 100) {
+                entries[0].remove();
+            }
+        }
+        
+        // 清空日志
+        function clearLogs() {
+            const logContainer = document.getElementById('log-container');
+            logContainer.innerHTML = `
+                <div class="log-entry">
+                    <span class="log-timestamp">[${new Date().toLocaleTimeString()}]</span>
+                    <span class="log-level info">[INFO]</span>
+                    日志已清空
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

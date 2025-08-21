@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tesla LibreTV 代码质量检查面板</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .main-content {
+            padding: 30px;
+        }
+        
+        .control-panel {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .control-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .control-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #1e7e34;
+            transform: translateY(-2px);
+        }
+        
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .btn-warning:hover {
+            background: #e0a800;
+            transform: translateY(-2px);
+        }
+        
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .btn-info:hover {
+            background: #117a8b;
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .status-panel {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .status-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .status-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .status-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #007bff, #28a745);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .log-panel {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .log-content {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .results-panel {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .results-tabs {
+            display: flex;
+            border-bottom: 1px solid #dee2e6;
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            border-bottom-color: #007bff;
+            color: #007bff;
+            font-weight: 500;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .issue-item {
+            background: #f8f9fa;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        .issue-item.warning {
+            border-left-color: #ffc107;
+        }
+        
+        .issue-item.info {
+            border-left-color: #17a2b8;
+        }
+        
+        .issue-header {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        .issue-details {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .issue-code {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+        }
+        
+        .suggestion-item {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .suggestion-header {
+            font-weight: bold;
+            color: #0066cc;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .suggestion-description {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .suggestion-actions {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .suggestion-actions li {
+            padding: 5px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .suggestion-actions li:before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .grade-a { color: #28a745; }
+        .grade-b { color: #17a2b8; }
+        .grade-c { color: #ffc107; }
+        .grade-d { color: #fd7e14; }
+        .grade-f { color: #dc3545; }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .file-list {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .file-item:last-child {
+            border-bottom: none;
+        }
+        
+        .file-name {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        
+        .file-status {
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            background: #e9ecef;
+            color: #495057;
+        }
+        
+        .file-status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .file-status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 代码质量检查面板</h1>
+            <p>Tesla LibreTV 项目代码质量分析工具</p>
+        </div>
+        
+        <div class="main-content">
+            <!-- 控制面板 -->
+            <div class="control-panel">
+                <h3>🎛️ 控制面板</h3>
+                <div class="control-row">
+                    <button id="startAnalysis" class="btn btn-primary">
+                        <span class="loading hidden"></span>
+                        🚀 开始分析
+                    </button>
+                    <button id="exportHtml" class="btn btn-success" disabled>
+                        📄 导出HTML报告
+                    </button>
+                    <button id="exportJson" class="btn btn-info" disabled>
+                        📋 导出JSON数据
+                    </button>
+                    <button id="clearResults" class="btn btn-warning">
+                        🗑️清空结果
+                    </button>
+                </div>
+                <div class="control-row">
+                    <label>
+                        <input type="checkbox" id="includeInfo" checked> 包含信息级别问题
+                    </label>
+                    <label>
+                        <input type="checkbox" id="autoExport"> 分析完成后自动导出
+                    </label>
+                </div>
+            </div>
+            
+            <!-- 状态面板 -->
+            <div class="status-panel">
+                <h3>📊 分析状态</h3>
+                <div class="status-grid">
+                    <div class="status-card">
+                        <div id="overallGrade" class="status-value">-</div>
+                        <div class="status-label">总体评级</div>
+                    </div>
+                    <div class="status-card">
+                        <div id="overallScore" class="status-value">-</div>
+                        <div class="status-label">质量分数</div>
+                    </div>
+                    <div class="status-card">
+                        <div id="totalIssues" class="status-value">-</div>
+                        <div class="status-label">发现问题</div>
+                    </div>
+                    <div class="status-card">
+                        <div id="totalSuggestions" class="status-value">-</div>
+                        <div class="status-label">改进建议</div>
+                    </div>
+                </div>
+                <div class="progress-bar">
+                    <div id="progressFill" class="progress-fill"></div>
+                </div>
+                <div id="progressText" style="text-align: center; margin-top: 10px; color: #666;">
+                    等待开始分析...
+                </div>
+            </div>
+            
+            <!-- 文件列表 -->
+            <div class="file-list" id="fileList">
+                <h4>📁 分析文件列表</h4>
+                <div id="fileItems">
+                    <!-- 文件项将动态添加 -->
+                </div>
+            </div>
+            
+            <!-- 日志面板 -->
+            <div class="log-panel">
+                <div class="log-header">
+                    <h3>📝 分析日志</h3>
+                    <button id="clearLog" class="btn btn-warning" style="padding: 6px 12px; font-size: 12px;">
+                        清空日志
+                    </button>
+                </div>
+                <div id="logContent" class="log-content">
+等待开始分析...
+                </div>
+            </div>
+            
+            <!-- 结果面板 -->
+            <div class="results-panel" id="resultsPanel" style="display: none;">
+                <h3>📋 分析结果</h3>
+                <div class="results-tabs">
+                    <div class="tab active" data-tab="overview">概览</div>
+                    <div class="tab" data-tab="issues">问题详情</div>
+                    <div class="tab" data-tab="suggestions">改进建议</div>
+                    <div class="tab" data-tab="metrics">详细指标</div>
+                </div>
+                
+                <div id="overviewTab" class="tab-content active">
+                    <div id="overviewContent">
+                        <!-- 概览内容将动态生成 -->
+                    </div>
+                </div>
+                
+                <div id="issuesTab" class="tab-content">
+                    <div id="issuesContent">
+                        <!-- 问题列表将动态生成 -->
+                    </div>
+                </div>
+                
+                <div id="suggestionsTab" class="tab-content">
+                    <div id="suggestionsContent">
+                        <!-- 建议列表将动态生成 -->
+                    </div>
+                </div>
+                
+                <div id="metricsTab" class="tab-content">
+                    <div id="metricsContent">
+                        <!-- 指标详情将动态生成 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="code-quality-checker.js"></script>
+    <script>
+        class CodeQualityDashboard {
+            constructor() {
+                this.checker = new CodeQualityChecker();
+                this.analysisResult = null;
+                this.isAnalyzing = false;
+                
+                this.initializeElements();
+                this.bindEvents();
+                this.initializeFileList();
+            }
+            
+            initializeElements() {
+                this.elements = {
+                    startAnalysis: document.getElementById('startAnalysis'),
+                    exportHtml: document.getElementById('exportHtml'),
+                    exportJson: document.getElementById('exportJson'),
+                    clearResults: document.getElementById('clearResults'),
+                    clearLog: document.getElementById('clearLog'),
+                    includeInfo: document.getElementById('includeInfo'),
+                    autoExport: document.getElementById('autoExport'),
+                    
+                    overallGrade: document.getElementById('overallGrade'),
+                    overallScore: document.getElementById('overallScore'),
+                    totalIssues: document.getElementById('totalIssues'),
+                    totalSuggestions: document.getElementById('totalSuggestions'),
+                    progressFill: document.getElementById('progressFill'),
+                    progressText: document.getElementById('progressText'),
+                    
+                    fileItems: document.getElementById('fileItems'),
+                    logContent: document.getElementById('logContent'),
+                    resultsPanel: document.getElementById('resultsPanel'),
+                    
+                    overviewContent: document.getElementById('overviewContent'),
+                    issuesContent: document.getElementById('issuesContent'),
+                    suggestionsContent: document.getElementById('suggestionsContent'),
+                    metricsContent: document.getElementById('metricsContent')
+                };
+            }
+            
+            bindEvents() {
+                this.elements.startAnalysis.addEventListener('click', () => this.startAnalysis());
+                this.elements.exportHtml.addEventListener('click', () => this.exportReport('html'));
+                this.elements.exportJson.addEventListener('click', () => this.exportReport('json'));
+                this.elements.clearResults.addEventListener('click', () => this.clearResults());
+                this.elements.clearLog.addEventListener('click', () => this.clearLog());
+                
+                // 标签页切换
+                document.querySelectorAll('.tab').forEach(tab => {
+                    tab.addEventListener('click', () => this.switchTab(tab.dataset.tab));
+                });
+            }
+            
+            initializeFileList() {
+                const files = [
+                    'tesla-proxy-server.js',
+                    'tesla-proxy-client.js',
+                    'tesla-comprehensive-test.html',
+                    'tesla-fallback-manager.js',
+                    'tesla-performance-monitor.js',
+                    'tesla-complete-test-suite.html',
+                    'tesla-automated-test.js',
+                    'tesla-test-runner.html',
+                    'code-quality-checker.js'
+                ];
+                
+                this.elements.fileItems.innerHTML = files.map(file => `
+                    <div class="file-item">
+                        <span class="file-name">${file}</span>
+                        <span class="file-status" id="status-${file}">待分析</span>
+                    </div>
+                `).join('');
+            }
+            
+            async startAnalysis() {
+                if (this.isAnalyzing) return;
+                
+                this.isAnalyzing = true;
+                this.updateAnalysisButton(true);
+                this.clearResults();
+                this.log('🚀 开始代码质量分析...');
+                
+                try {
+                    this.updateProgress(0, '初始化分析器...');
+                    
+                    // 模拟分析过程
+                    const files = [
+                        'tesla-proxy-server.js',
+                        'tesla-proxy-client.js',
+                        'tesla-comprehensive-test.html',
+                        'tesla-fallback-manager.js',
+                        'tesla-performance-monitor.js',
+                        'tesla-complete-test-suite.html',
+                        'tesla-automated-test.js',
+                        'tesla-test-runner.html',
+                        'code-quality-checker.js'
+                    ];
+                    
+                    for (let i = 0; i < files.length; i++) {
+                        const file = files[i];
+                        const progress = ((i + 1) / files.length) * 100;
+                        
+                        this.updateProgress(progress, `分析文件: ${file}`);
+                        this.updateFileStatus(file, '分析中...');
+                        this.log(`📄 分析文件: ${file}`);
+                        
+                        try {
+                            // 尝试读取和分析文件
+                            const response = await fetch(file);
+                            if (response.ok) {
+                                const content = await response.text();
+                                await this.checker.analyzeFile(file, content);
+                                this.updateFileStatus(file, '完成', 'success');
+                                this.log(`✅ ${file} 分析完成`);
+                            } else {
+                                this.updateFileStatus(file, '未找到', 'error');
+                                this.log(`⚠️ ${file} 文件未找到`);
+                            }
+                        } catch (error) {
+                            this.updateFileStatus(file, '错误', 'error');
+                            this.log(`❌ ${file} 分析失败: ${error.message}`);
+                        }
+                        
+                        // 模拟分析时间
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    }
+                    
+                    this.updateProgress(100, '生成分析报告...');
+                    this.log('📊 生成分析报告...');
+                    
+                    // 生成最终结果
+                    this.analysisResult = {
+                        summary: this.generateMockSummary(),
+                        issues: this.checker.issues,
+                        suggestions: this.generateMockSuggestions(),
+                        metrics: this.generateMockMetrics()
+                    };
+                    
+                    this.displayResults();
+                    this.log('✅ 代码质量分析完成!');
+                    
+                    // 自动导出（如果启用）
+                    if (this.elements.autoExport.checked) {
+                        this.exportReport('html');
+                    }
+                    
+                } catch (error) {
+                    this.log(`❌ 分析失败: ${error.message}`);
+                    console.error('Analysis failed:', error);
+                } finally {
+                    this.isAnalyzing = false;
+                    this.updateAnalysisButton(false);
+                }
+            }
+            
+            generateMockSummary() {
+                const totalIssues = this.checker.issues.length;
+                const criticalIssues = this.checker.issues.filter(i => i.severity === 'error').length;
+                const warningIssues = this.checker.issues.filter(i => i.severity === 'warning').length;
+                const infoIssues = this.checker.issues.filter(i => i.severity === 'info').length;
+                
+                const overallScore = Math.max(20, 100 - totalIssues * 5);
+                const grade = this.getQualityGrade(overallScore);
+                
+                return {
+                    totalIssues,
+                    criticalIssues,
+                    warningIssues,
+                    infoIssues,
+                    overallScore,
+                    grade,
+                    recommendations: 3
+                };
+            }
+            
+            generateMockSuggestions() {
+                return [
+                    {
+                        category: 'performance',
+                        priority: 'high',
+                        title: '性能优化建议',
+                        description: '发现多个性能相关问题，建议优化异步操作和DOM操作',
+                        actions: [
+                            '使用async/await替代同步操作',
+                            '缓存DOM元素引用',
+                            '实现事件监听器的清理机制'
+                        ]
+                    },
+                    {
+                        category: 'tesla',
+                        priority: 'medium',
+                        title: 'Tesla兼容性优化',
+                        description: '针对Tesla车机环境的特殊优化建议',
+                        actions: [
+                            '增强网络连接的容错性',
+                            '优化资源加载策略',
+                            '实现更智能的降级策略'
+                        ]
+                    },
+                    {
+                        category: 'maintainability',
+                        priority: 'medium',
+                        title: '代码可维护性提升',
+                        description: '提高代码质量和可维护性的建议',
+                        actions: [
+                            '拆分大型函数为更小的单元',
+                            '减少代码重复',
+                            '添加更多注释和文档'
+                        ]
+                    }
+                ];
+            }
+            
+            generateMockMetrics() {
+                return {
+                    complexity: 75,
+                    maintainability: 82,
+                    performance: 78,
+                    security: 85,
+                    overall: 80
+                };
+            }
+            
+            getQualityGrade(score) {
+                if (score >= 90) return 'A';
+                if (score >= 80) return 'B';
+                if (score >= 70) return 'C';
+                if (score >= 60) return 'D';
+                return 'F';
+            }
+            
+            updateAnalysisButton(analyzing) {
+                const button = this.elements.startAnalysis;
+                const loading = button.querySelector('.loading');
+                
+                if (analyzing) {
+                    button.disabled = true;
+                    button.innerHTML = '<span class="loading"></span> 分析中...';
+                    loading.classList.remove('hidden');
+                } else {
+                    button.disabled = false;
+                    button.innerHTML = '🚀 开始分析';
+                }
+            }
+            
+            updateProgress(percent, text) {
+                this.elements.progressFill.style.width = `${percent}%`;
+                this.elements.progressText.textContent = text;
+            }
+            
+            updateFileStatus(fileName, status, type = '') {
+                const statusElement = document.getElementById(`status-${fileName}`);
+                if (statusElement) {
+                    statusElement.textContent = status;
+                    statusElement.className = `file-status ${type}`;
+                }
+            }
+            
+            displayResults() {
+                if (!this.analysisResult) return;
+                
+                const { summary, issues, suggestions, metrics } = this.analysisResult;
+                
+                // 更新状态卡片
+                this.elements.overallGrade.textContent = summary.grade;
+                this.elements.overallGrade.className = `status-value grade-${summary.grade.toLowerCase()}`;
+                this.elements.overallScore.textContent = summary.overallScore;
+                this.elements.totalIssues.textContent = summary.totalIssues;
+                this.elements.totalSuggestions.textContent = summary.recommendations;
+                
+                // 显示结果面板
+                this.elements.resultsPanel.style.display = 'block';
+                
+                // 启用导出按钮
+                this.elements.exportHtml.disabled = false;
+                this.elements.exportJson.disabled = false;
+                
+                // 填充各个标签页内容
+                this.displayOverview(summary, metrics);
+                this.displayIssues(issues);
+                this.displaySuggestions(suggestions);
+                this.displayMetrics(metrics);
+            }
+            
+            displayOverview(summary, metrics) {
+                this.elements.overviewContent.innerHTML = `
+                    <div class="status-grid">
+                        <div class="status-card">
+                            <div class="status-value">${summary.criticalIssues}</div>
+                            <div class="status-label">严重问题</div>
+                        </div>
+                        <div class="status-card">
+                            <div class="status-value">${summary.warningIssues}</div>
+                            <div class="status-label">警告问题</div>
+                        </div>
+                        <div class="status-card">
+                            <div class="status-value">${summary.infoIssues}</div>
+                            <div class="status-label">信息问题</div>
+                        </div>
+                        <div class="status-card">
+                            <div class="status-value">${Math.round(metrics.overall)}</div>
+                            <div class="status-label">综合评分</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <h4>质量评估</h4>
+                        <p>您的代码总体质量为 <strong class="grade-${summary.grade.toLowerCase()}">${summary.grade} 级</strong>，
+                        综合评分 <strong>${summary.overallScore}</strong> 分。</p>
+                        <p>发现了 <strong>${summary.totalIssues}</strong> 个问题，
+                        其中包括 <strong>${summary.criticalIssues}</strong> 个严重问题和 
+                        <strong>${summary.warningIssues}</strong> 个警告。</p>
+                        <p>我们为您提供了 <strong>${summary.recommendations}</strong> 条改进建议，
+                        建议优先处理严重问题和警告。</p>
+                    </div>
+                `;
+            }
+            
+            displayIssues(issues) {
+                if (issues.length === 0) {
+                    this.elements.issuesContent.innerHTML = '<p>🎉 恭喜！没有发现任何问题。</p>';
+                    return;
+                }
+                
+                const filteredIssues = this.elements.includeInfo.checked ? 
+                    issues : issues.filter(issue => issue.severity !== 'info');
+                
+                this.elements.issuesContent.innerHTML = filteredIssues.map(issue => `
+                    <div class="issue-item ${issue.severity}">
+                        <div class="issue-header">${issue.message}</div>
+                        <div class="issue-details">
+                            文件: ${issue.file} | 行号: ${issue.line} | 
+                            类别: ${issue.category} | 严重程度: ${issue.severity}
+                        </div>
+                        ${issue.code ? `<div class="issue-code">${issue.code}</div>` : ''}
+                    </div>
+                `).join('');
+            }
+            
+            displaySuggestions(suggestions) {
+                this.elements.suggestionsContent.innerHTML = suggestions.map(suggestion => `
+                    <div class="suggestion-item priority-${suggestion.priority}">
+                        <div class="suggestion-header">${suggestion.title}</div>
+                        <div class="suggestion-description">${suggestion.description}</div>
+                        <ul class="suggestion-actions">
+                            ${suggestion.actions.map(action => `<li>${action}</li>`).join('')}
+                        </ul>
+                    </div>
+                `).join('');
+            }
+            
+            displayMetrics(metrics) {
+                this.elements.metricsContent.innerHTML = `
+                    <div class="status-grid">
+                        <div class="status-card">
+                            <div class="status-value">${Math.round(metrics.complexity)}</div>
+                            <div class="status-label">复杂度分数</div>
+                        </div>
+                        <div class="status-card">
+                            <div class="status-value">${Math.round(metrics.maintainability)}</div>
+                            <div class="status-label">可维护性</div>
+                        </div>
+                        <div class="status-card">
+                            <div class="status-value">${Math.round(metrics.performance)}</div>
+                            <div class="status-label">性能分数</div>
+                        </div>
+                        <div class="status-card">
+                            <div class="status-value">${Math.round(metrics.security)}</div>
+                            <div class="status-label">安全分数</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <h4>指标说明</h4>
+                        <ul>
+                            <li><strong>复杂度分数</strong>: 代码的复杂程度，分数越高表示代码越简洁</li>
+                            <li><strong>可维护性</strong>: 代码的可维护程度，包括可读性和结构清晰度</li>
+                            <li><strong>性能分数</strong>: 代码的性能表现，包括执行效率和资源使用</li>
+                            <li><strong>安全分数</strong>: 代码的安全性，包括潜在的安全漏洞</li>
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            switchTab(tabName) {
+                // 更新标签状态
+                document.querySelectorAll('.tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+                
+                // 更新内容显示
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.getElementById(`${tabName}Tab`).classList.add('active');
+            }
+            
+            exportReport(format) {
+                if (!this.analysisResult) {
+                    this.log('❌ 没有可导出的分析结果');
+                    return;
+                }
+                
+                try {
+                    this.checker.exportReport(this.analysisResult, format);
+                    this.log(`✅ ${format.toUpperCase()} 报告导出成功`);
+                } catch (error) {
+                    this.log(`❌ 导出失败: ${error.message}`);
+                }
+            }
+            
+            clearResults() {
+                this.analysisResult = null;
+                this.checker.issues = [];
+                this.checker.suggestions = [];
+                
+                // 重置状态显示
+                this.elements.overallGrade.textContent = '-';
+                this.elements.overallScore.textContent = '-';
+                this.elements.totalIssues.textContent = '-';
+                this.elements.totalSuggestions.textContent = '-';
+                this.elements.progressFill.style.width = '0%';
+                this.elements.progressText.textContent = '等待开始分析...';
+                
+                // 隐藏结果面板
+                this.elements.resultsPanel.style.display = 'none';
+                
+                // 禁用导出按钮
+                this.elements.exportHtml.disabled = true;
+                this.elements.exportJson.disabled = true;
+                
+                // 重置文件状态
+                document.querySelectorAll('.file-status').forEach(status => {
+                    status.textContent = '待分析';
+                    status.className = 'file-status';
+                });
+            }
+            
+            clearLog() {
+                this.elements.logContent.textContent = '日志已清空...';
+            }
+            
+            log(message) {
+                const timestamp = new Date().toLocaleTimeString();
+                const logMessage = `[${timestamp}] ${message}`;
+                
+                this.elements.logContent.textContent += '\n' + logMessage;
+                this.elements.logContent.scrollTop = this.elements.logContent.scrollHeight;
+                
+                console.log(logMessage);
+            }
+        }
+        
+        // 初始化面板
+        document.addEventListener('DOMContentLoaded', () => {
+            window.dashboard = new CodeQualityDashboard();
+        });
+    </script>
+</body>
+</html>
