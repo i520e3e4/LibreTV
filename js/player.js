@@ -406,7 +406,7 @@ function initPlayer(videoUrl) {
     if (typeof TeslaDetector !== 'undefined') {
         const teslaDetector = new TeslaDetector();
         
-        if (teslaDetector.isTeslaEnvironment()) {
+        if (teslaDetector.isTesla) {
             console.log('检测到特斯拉环境，使用自定义渲染方案');
             
             // 销毁旧实例
@@ -461,7 +461,7 @@ function initPlayer(videoUrl) {
         container: '#player',
         url: videoUrl,
         type: 'm3u8',
-        title: videoTitle,
+        title: currentVideoTitle,
         volume: 0.8,
         isLive: false,
         muted: false,
@@ -948,18 +948,189 @@ function initStandardPlayer(videoUrl) {
     // 当特斯拉播放器初始化失败时使用
     console.log('使用标准播放器');
     
-    // 重新调用原有的initPlayer逻辑，但跳过特斯拉检测
-    const originalInitPlayer = initPlayer;
+    if (!videoUrl) {
+        return;
+    }
     
-    // 临时禁用特斯拉检测
-    const originalTeslaDetector = window.TeslaDetector;
-    window.TeslaDetector = undefined;
-    
+    // 获取保存的播放位置
+    const urlParams = new URLSearchParams(window.location.search);
+    const savedPosition = parseInt(urlParams.get('position') || '0');
+
+    // 销毁旧实例
+    if (art) {
+        art.destroy();
+        art = null;
+    }
+
+    // 配置HLS.js选项
+    const hlsConfig = {
+        debug: false,
+        loader: adFilteringEnabled ? CustomHlsJsLoader : Hls.DefaultConfig.loader,
+        enableWorker: true,
+        lowLatencyMode: false,
+        backBufferLength: 90,
+        maxBufferLength: 30,
+        maxMaxBufferLength: 60,
+        maxBufferSize: 30 * 1000 * 1000,
+        maxBufferHole: 0.5,
+        fragLoadingMaxRetry: 6,
+        fragLoadingMaxRetryTimeout: 64000,
+        fragLoadingRetryDelay: 1000,
+        manifestLoadingMaxRetry: 3,
+        manifestLoadingRetryDelay: 1000,
+        levelLoadingMaxRetry: 4,
+        levelLoadingRetryDelay: 1000,
+        startLevel: -1,
+        abrEwmaDefaultEstimate: 500000,
+        abrBandWidthFactor: 0.95,
+        abrBandWidthUpFactor: 0.7,
+        abrMaxWithRealBitrate: true,
+        stretchShortVideoTrack: true,
+        appendErrorMaxRetry: 5,
+        liveSyncDurationCount: 3,
+        liveDurationInfinity: false
+    };
+
+    // Create new ArtPlayer instance
     try {
-        originalInitPlayer(videoUrl);
-    } finally {
-        // 恢复特斯拉检测
-        window.TeslaDetector = originalTeslaDetector;
+        art = new Artplayer({
+            container: '#player',
+            url: videoUrl,
+            type: 'm3u8',
+            title: currentVideoTitle,
+            volume: 0.8,
+            isLive: false,
+            muted: false,
+            autoplay: true,
+            pip: true,
+            autoSize: false,
+            autoMini: true,
+            screenshot: true,
+            setting: true,
+            loop: false,
+            flip: false,
+            playbackRate: true,
+            aspectRatio: false,
+            fullscreen: true,
+            fullscreenWeb: true,
+            subtitleOffset: false,
+            miniProgressBar: true,
+            mutex: true,
+            backdrop: true,
+            playsInline: true,
+            autoPlayback: false,
+            airplay: true,
+            hotkey: false,
+            theme: '#23ade5',
+            lang: navigator.language.toLowerCase(),
+            moreVideoAttr: {
+                crossOrigin: 'anonymous',
+            },
+            customType: {
+                m3u8: function (video, url) {
+                    // 清理之前的HLS实例
+                    if (currentHls && currentHls.destroy) {
+                        try {
+                            currentHls.destroy();
+                        } catch (e) {
+                            console.warn('销毁HLS实例时出错:', e);
+                        }
+                        currentHls = null;
+                    }
+
+                    if (Hls.isSupported()) {
+                        const hls = new Hls(hlsConfig);
+                        currentHls = hls;
+                        hls.loadSource(url);
+                        hls.attachMedia(video);
+
+                        let errorCount = 0;
+                        let bufferAppendErrorCount = 0;
+                        let playbackStarted = false;
+
+                        video.addEventListener('play', () => {
+                            playbackStarted = true;
+                        });
+
+                        // 检查是否已存在source元素，如果存在则更新，不存在则创建
+                        let sourceElement = video.querySelector('source');
+                        if (sourceElement) {
+                            sourceElement.src = videoUrl;
+                        } else {
+                            sourceElement = document.createElement('source');
+                            sourceElement.src = videoUrl;
+                            video.appendChild(sourceElement);
+                        }
+                        video.disableRemotePlayback = false;
+
+                        hls.on(Hls.Events.MANIFEST_PARSED, function () {
+                            video.play().catch(e => {
+                                console.warn('自动播放失败:', e);
+                            });
+                        });
+
+                        hls.on(Hls.Events.ERROR, function (event, data) {
+                            errorCount++;
+
+                            if (data.details === 'bufferAppendError') {
+                                bufferAppendErrorCount++;
+                                if (playbackStarted) {
+                                    return;
+                                }
+                                if (bufferAppendErrorCount >= 3) {
+                                    hls.recoverMediaError();
+                                }
+                            }
+
+                            if (data.fatal) {
+                                switch (data.type) {
+                                    case Hls.ErrorTypes.NETWORK_ERROR:
+                                        if (errorCount < 3) {
+                                            hls.startLoad();
+                                        } else {
+                                            showError('网络错误，无法加载视频');
+                                        }
+                                        break;
+                                    case Hls.ErrorTypes.MEDIA_ERROR:
+                                        if (errorCount < 3) {
+                                            hls.recoverMediaError();
+                                        } else {
+                                            showError('媒体错误，无法播放视频');
+                                        }
+                                        break;
+                                    default:
+                                        showError('播放器错误，无法播放视频');
+                                        break;
+                                }
+                            }
+                        });
+                    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                        video.src = url;
+                    } else {
+                        showError('您的浏览器不支持HLS播放');
+                    }
+                }
+            }
+        });
+
+        // 播放器事件处理
+        art.on('ready', () => {
+            console.log('播放器准备就绪');
+            document.getElementById('player-loading').style.display = 'none';
+            
+            if (savedPosition > 0) {
+                showPositionRestoreHint(savedPosition);
+            }
+        });
+
+        art.on('error', (error) => {
+            console.error('播放器错误:', error);
+            showError('视频播放失败，请尝试其他视频源');
+        });
+
+    } catch (error) {
+        console.error('ArtPlayer初始化失败:', error);
+        showError('播放器初始化失败');
     }
 }
 

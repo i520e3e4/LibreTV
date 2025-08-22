@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>播放器详细调试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .debug-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #2a2a2a;
+        }
+        .error {
+            color: #ff6b6b;
+        }
+        .success {
+            color: #51cf66;
+        }
+        .warning {
+            color: #ffd43b;
+        }
+        #console-output {
+            background: #000;
+            padding: 10px;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #005a9e;
+        }
+        .test-video {
+            width: 100%;
+            max-width: 600px;
+            height: 300px;
+            background: #000;
+            border: 1px solid #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>播放器详细调试页面</h1>
+    
+    <div class="debug-section">
+        <h2>1. 环境检测</h2>
+        <div id="env-check">检测中...</div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>2. 库文件加载状态</h2>
+        <div id="libs-check">检测中...</div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>3. 播放器测试</h2>
+        <button onclick="testBasicVideo()">测试基础视频</button>
+        <button onclick="testHLSVideo()">测试HLS视频</button>
+        <button onclick="testArtPlayer()">测试ArtPlayer</button>
+        <div id="player-test-result"></div>
+        <div id="test-player-container">
+            <video id="test-video" class="test-video" controls style="display:none;">
+                您的浏览器不支持视频播放。
+            </video>
+            <div id="art-player" style="width: 100%; height: 300px; display: none;"></div>
+        </div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>4. 原始播放器页面测试</h2>
+        <button onclick="testOriginalPlayer()">在新窗口打开原始播放器</button>
+        <div id="original-test-result"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>5. 控制台输出</h2>
+        <button onclick="clearConsole()">清空日志</button>
+        <div id="console-output"></div>
+    </div>
+    
+    <script src="libs/hls.min.js"></script>
+    <script src="libs/artplayer.min.js"></script>
+    
+    <script>
+        // 控制台日志捕获
+        const consoleOutput = document.getElementById('console-output');
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        function addToConsole(type, message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = `[${timestamp}] [${type.toUpperCase()}] ${message}`;
+            consoleOutput.appendChild(div);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToConsole('log', args.join(' '));
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToConsole('error', args.join(' '));
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addToConsole('warning', args.join(' '));
+        };
+        
+        // 捕获未处理的错误
+        window.addEventListener('error', function(e) {
+            addToConsole('error', `未捕获错误: ${e.message} 在 ${e.filename}:${e.lineno}`);
+        });
+        
+        window.addEventListener('unhandledrejection', function(e) {
+            addToConsole('error', `未处理的Promise拒绝: ${e.reason}`);
+        });
+        
+        function clearConsole() {
+            consoleOutput.innerHTML = '';
+        }
+        
+        // 环境检测
+        function checkEnvironment() {
+            const envCheck = document.getElementById('env-check');
+            let html = '';
+            
+            // 浏览器信息
+            html += `<p><strong>浏览器:</strong> ${navigator.userAgent}</p>`;
+            html += `<p><strong>协议:</strong> ${location.protocol}</p>`;
+            html += `<p><strong>域名:</strong> ${location.hostname}</p>`;
+            
+            // 视频支持检测
+            const video = document.createElement('video');
+            html += `<p><strong>H.264支持:</strong> ${video.canPlayType('video/mp4; codecs="avc1.42E01E"') ? '✓' : '✗'}</p>`;
+            html += `<p><strong>HLS支持:</strong> ${video.canPlayType('application/vnd.apple.mpegurl') ? '✓' : '✗'}</p>`;
+            
+            envCheck.innerHTML = html;
+        }
+        
+        // 库文件检测
+        function checkLibraries() {
+            const libsCheck = document.getElementById('libs-check');
+            let html = '';
+            
+            html += `<p><strong>HLS.js:</strong> ${typeof Hls !== 'undefined' ? '✓ 已加载' : '✗ 未加载'}</p>`;
+            html += `<p><strong>ArtPlayer:</strong> ${typeof Artplayer !== 'undefined' ? '✓ 已加载' : '✗ 未加载'}</p>`;
+            
+            if (typeof Hls !== 'undefined') {
+                html += `<p><strong>HLS.js版本:</strong> ${Hls.version || '未知'}</p>`;
+                html += `<p><strong>HLS支持:</strong> ${Hls.isSupported() ? '✓' : '✗'}</p>`;
+            }
+            
+            libsCheck.innerHTML = html;
+        }
+        
+        // 测试基础视频播放
+        function testBasicVideo() {
+            console.log('开始测试基础视频播放...');
+            const video = document.getElementById('test-video');
+            const result = document.getElementById('player-test-result');
+            
+            // 隐藏其他播放器
+            document.getElementById('art-player').style.display = 'none';
+            video.style.display = 'block';
+            
+            video.src = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+            
+            video.onloadstart = () => console.log('视频开始加载');
+            video.onloadedmetadata = () => console.log('视频元数据加载完成');
+            video.oncanplay = () => console.log('视频可以播放');
+            video.onplay = () => console.log('视频开始播放');
+            video.onerror = (e) => {
+                console.error('视频播放错误:', e);
+                result.innerHTML = '<p class="error">基础视频播放失败</p>';
+            };
+            
+            video.load();
+            result.innerHTML = '<p class="warning">正在测试基础视频播放...</p>';
+            
+            setTimeout(() => {
+                if (video.readyState >= 2) {
+                    result.innerHTML = '<p class="success">基础视频播放正常</p>';
+                } else {
+                    result.innerHTML = '<p class="error">基础视频加载超时</p>';
+                }
+            }, 5000);
+        }
+        
+        // 测试HLS视频播放
+        function testHLSVideo() {
+            console.log('开始测试HLS视频播放...');
+            const video = document.getElementById('test-video');
+            const result = document.getElementById('player-test-result');
+            
+            if (!Hls.isSupported()) {
+                result.innerHTML = '<p class="error">浏览器不支持HLS</p>';
+                return;
+            }
+            
+            // 隐藏其他播放器
+            document.getElementById('art-player').style.display = 'none';
+            video.style.display = 'block';
+            
+            const hls = new Hls();
+            hls.loadSource('https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8');
+            hls.attachMedia(video);
+            
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                console.log('HLS清单解析完成');
+                result.innerHTML = '<p class="success">HLS视频加载成功</p>';
+            });
+            
+            hls.on(Hls.Events.ERROR, (event, data) => {
+                console.error('HLS错误:', data);
+                result.innerHTML = `<p class="error">HLS播放错误: ${data.type} - ${data.details}</p>`;
+            });
+            
+            result.innerHTML = '<p class="warning">正在测试HLS视频播放...</p>';
+        }
+        
+        // 测试ArtPlayer
+        function testArtPlayer() {
+            console.log('开始测试ArtPlayer...');
+            const result = document.getElementById('player-test-result');
+            const container = document.getElementById('art-player');
+            
+            if (typeof Artplayer === 'undefined') {
+                result.innerHTML = '<p class="error">ArtPlayer未加载</p>';
+                return;
+            }
+            
+            // 隐藏其他播放器
+            document.getElementById('test-video').style.display = 'none';
+            container.style.display = 'block';
+            container.innerHTML = ''; // 清空容器
+            
+            try {
+                const art = new Artplayer({
+                    container: container,
+                    url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+                    title: 'ArtPlayer测试视频',
+                    volume: 0.5,
+                    autoplay: false,
+                    pip: true,
+                    setting: true,
+                    playbackRate: true,
+                    aspectRatio: true,
+                    fullscreen: true,
+                    fullscreenWeb: true,
+                });
+                
+                art.on('ready', () => {
+                    console.log('ArtPlayer准备就绪');
+                    result.innerHTML = '<p class="success">ArtPlayer初始化成功</p>';
+                });
+                
+                art.on('error', (error) => {
+                    console.error('ArtPlayer错误:', error);
+                    result.innerHTML = `<p class="error">ArtPlayer错误: ${error.message || error}</p>`;
+                });
+                
+                result.innerHTML = '<p class="warning">正在测试ArtPlayer...</p>';
+                
+            } catch (error) {
+                console.error('ArtPlayer初始化失败:', error);
+                result.innerHTML = `<p class="error">ArtPlayer初始化失败: ${error.message}</p>`;
+            }
+        }
+        
+        // 测试原始播放器
+        function testOriginalPlayer() {
+            const testUrl = 'player.html?videoUrl=https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4&title=测试视频';
+            window.open(testUrl, '_blank');
+            document.getElementById('original-test-result').innerHTML = '<p class="warning">已在新窗口打开原始播放器，请检查控制台错误</p>';
+        }
+        
+        // 页面加载完成后执行检测
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('页面加载完成，开始环境检测...');
+            checkEnvironment();
+            checkLibraries();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>播放器问题修复调试</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #2a2a2a;
+            border-radius: 8px;
+        }
+        .log {
+            background: #333;
+            padding: 10px;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+        .error { color: #ff6b6b; }
+        .success { color: #51cf66; }
+        .info { color: #74c0fc; }
+        .warning { color: #ffd43b; }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .test-link {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background: #333;
+            color: #74c0fc;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+        .test-link:hover {
+            background: #444;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>LibreTV 播放器问题修复调试</h1>
+        
+        <div class="section">
+            <h2>问题诊断</h2>
+            <div id="diagnosisLog" class="log"></div>
+            <button onclick="runDiagnosis()">运行完整诊断</button>
+            <button onclick="clearLog()">清空日志</button>
+        </div>
+
+        <div class="section">
+            <h2>测试播放器链接</h2>
+            <p>以下是一些测试链接，用于验证播放器功能：</p>
+            
+            <!-- 基础测试链接 -->
+            <a href="player.html?url=https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4&title=测试视频&source=test&index=0" 
+               class="test-link" target="_blank">
+                测试1: 基础MP4视频播放
+            </a>
+            
+            <a href="player.html?url=https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8&title=HLS测试视频&source=test&index=0" 
+               class="test-link" target="_blank">
+                测试2: HLS视频播放
+            </a>
+            
+            <!-- 自定义测试链接 -->
+            <div style="margin: 20px 0;">
+                <h3>自定义测试</h3>
+                <input type="text" id="customVideoUrl" placeholder="输入视频URL">
+                <input type="text" id="customTitle" placeholder="输入视频标题" value="自定义测试视频">
+                <button onclick="generateCustomLink()">生成测试链接</button>
+                <div id="customLinkResult" style="margin-top: 10px;"></div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>播放器状态检查</h2>
+            <div id="statusLog" class="log"></div>
+            <button onclick="checkPlayerStatus()">检查播放器状态</button>
+            <button onclick="checkConsoleErrors()">检查控制台错误</button>
+        </div>
+
+        <div class="section">
+            <h2>修复建议</h2>
+            <div id="fixSuggestions">
+                <h3>常见问题及解决方案：</h3>
+                <ul>
+                    <li><strong>"正在加载视频..."一直显示</strong>：通常是因为缺少URL参数或视频源无效</li>
+                    <li><strong>播放器无法初始化</strong>：检查JavaScript库是否正确加载</li>
+                    <li><strong>视频无法播放</strong>：检查视频格式兼容性和网络连接</li>
+                    <li><strong>HLS播放失败</strong>：确认HLS.js库已加载且视频源支持CORS</li>
+                </ul>
+                
+                <h3>推荐的测试步骤：</h3>
+                <ol>
+                    <li>首先使用上面的测试链接验证基本功能</li>
+                    <li>检查浏览器控制台是否有JavaScript错误</li>
+                    <li>确认视频URL是否可访问</li>
+                    <li>测试不同格式的视频文件</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info', targetId = 'diagnosisLog') {
+            const logDiv = document.getElementById(targetId);
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = type;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function clearLog() {
+            document.getElementById('diagnosisLog').innerHTML = '';
+            document.getElementById('statusLog').innerHTML = '';
+        }
+
+        function runDiagnosis() {
+            log('开始运行完整诊断...', 'info');
+            
+            // 检查当前页面URL参数
+            const urlParams = new URLSearchParams(window.location.search);
+            log('当前页面URL参数检查:', 'info');
+            
+            if (urlParams.toString()) {
+                log(`URL参数: ${urlParams.toString()}`, 'info');
+            } else {
+                log('当前页面没有URL参数', 'warning');
+            }
+            
+            // 检查必要的库
+            log('检查JavaScript库加载状态:', 'info');
+            
+            if (typeof Artplayer !== 'undefined') {
+                log('✓ ArtPlayer库已加载', 'success');
+            } else {
+                log('✗ ArtPlayer库未加载', 'error');
+            }
+            
+            if (typeof Hls !== 'undefined') {
+                log('✓ HLS.js库已加载', 'success');
+            } else {
+                log('✗ HLS.js库未加载', 'error');
+            }
+            
+            // 检查浏览器支持
+            log('检查浏览器视频支持:', 'info');
+            const video = document.createElement('video');
+            
+            if (video.canPlayType('video/mp4')) {
+                log('✓ 支持MP4格式', 'success');
+            } else {
+                log('✗ 不支持MP4格式', 'error');
+            }
+            
+            if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                log('✓ 原生支持HLS', 'success');
+            } else {
+                log('- 不支持原生HLS（需要HLS.js）', 'warning');
+            }
+            
+            // 检查localStorage
+            log('检查本地存储:', 'info');
+            try {
+                const testKey = 'test_' + Date.now();
+                localStorage.setItem(testKey, 'test');
+                localStorage.removeItem(testKey);
+                log('✓ localStorage可用', 'success');
+            } catch (e) {
+                log('✗ localStorage不可用: ' + e.message, 'error');
+            }
+            
+            // 检查网络连接
+            log('检查网络连接:', 'info');
+            if (navigator.onLine) {
+                log('✓ 网络连接正常', 'success');
+            } else {
+                log('✗ 网络连接异常', 'error');
+            }
+            
+            log('诊断完成', 'info');
+        }
+
+        function checkPlayerStatus() {
+            log('检查播放器状态...', 'info', 'statusLog');
+            
+            // 检查播放器容器
+            const playerContainer = document.getElementById('player');
+            if (playerContainer) {
+                log('✓ 播放器容器存在', 'success', 'statusLog');
+            } else {
+                log('✗ 播放器容器不存在', 'error', 'statusLog');
+            }
+            
+            // 检查加载状态
+            const loadingElement = document.getElementById('player-loading');
+            if (loadingElement) {
+                const isVisible = loadingElement.style.display !== 'none';
+                log(`加载指示器状态: ${isVisible ? '显示' : '隐藏'}`, isVisible ? 'warning' : 'info', 'statusLog');
+            }
+            
+            // 检查错误显示
+            const errorElement = document.getElementById('error');
+            if (errorElement) {
+                const isVisible = errorElement.style.display !== 'none';
+                log(`错误显示状态: ${isVisible ? '显示' : '隐藏'}`, isVisible ? 'error' : 'info', 'statusLog');
+                if (isVisible) {
+                    log(`错误内容: ${errorElement.textContent}`, 'error', 'statusLog');
+                }
+            }
+        }
+
+        function checkConsoleErrors() {
+            log('检查控制台错误...', 'info', 'statusLog');
+            
+            // 重写console.error来捕获错误
+            const originalError = console.error;
+            const errors = [];
+            
+            console.error = function(...args) {
+                errors.push(args.join(' '));
+                originalError.apply(console, args);
+            };
+            
+            // 检查是否有已存在的错误
+            if (window.lastError) {
+                log(`最后的错误: ${window.lastError}`, 'error', 'statusLog');
+            }
+            
+            // 恢复原始console.error
+            setTimeout(() => {
+                console.error = originalError;
+                if (errors.length > 0) {
+                    errors.forEach(error => {
+                        log(`控制台错误: ${error}`, 'error', 'statusLog');
+                    });
+                } else {
+                    log('没有发现控制台错误', 'success', 'statusLog');
+                }
+            }, 1000);
+        }
+
+        function generateCustomLink() {
+            const url = document.getElementById('customVideoUrl').value.trim();
+            const title = document.getElementById('customTitle').value.trim() || '自定义测试视频';
+            
+            if (!url) {
+                alert('请输入视频URL');
+                return;
+            }
+            
+            const playerUrl = `player.html?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}&source=custom&index=0`;
+            
+            const resultDiv = document.getElementById('customLinkResult');
+            resultDiv.innerHTML = `
+                <a href="${playerUrl}" class="test-link" target="_blank">
+                    自定义测试: ${title}
+                </a>
+                <div style="font-size: 12px; color: #aaa; margin-top: 5px;">
+                    链接: ${playerUrl}
+                </div>
+            `;
+        }
+
+        // 全局错误捕获
+        window.addEventListener('error', (e) => {
+            window.lastError = `${e.message} (${e.filename}:${e.lineno})`;
+            log(`全局错误: ${window.lastError}`, 'error');
+        });
+
+        window.addEventListener('unhandledrejection', (e) => {
+            window.lastError = `未处理的Promise拒绝: ${e.reason}`;
+            log(window.lastError, 'error');
+        });
+
+        // 页面加载完成后自动运行诊断
+        window.addEventListener('load', () => {
+            log('页面加载完成', 'info');
+            setTimeout(runDiagnosis, 500);
+        });
+    </script>
+</body>
+</html>
