@@ -416,7 +416,7 @@ function initPlayer(videoUrl) {
             }
             
             // 使用特斯拉自定义渲染器
-            initTeslaPlayer(videoUrl, teslaDetector);
+            initTeslaPlayer(videoUrl, teslaDetector).catch(console.error);
             return;
         }
     }
@@ -778,7 +778,7 @@ function initPlayer(videoUrl) {
 }
 
 // 特斯拉环境下的播放器初始化函数
-function initTeslaPlayer(videoUrl, teslaDetector) {
+async function initTeslaPlayer(videoUrl, teslaDetector) {
     console.log('初始化特斯拉播放器');
     
     // 创建特斯拉渲染器、解码器、UI控制器和性能优化器
@@ -814,8 +814,16 @@ function initTeslaPlayer(videoUrl, teslaDetector) {
         // 初始化UI控制器
         teslaUI = new TeslaUIController('#player', teslaRenderer, teslaDecoder);
         
-        // 启动性能监控
-        performanceOptimizer.startMonitoring(teslaRenderer, teslaDecoder);
+        // 初始化性能监控器
+        const performanceMonitor = new TeslaPerformanceMonitor({
+            debug: true,
+            monitoringInterval: 1000,
+            optimizationInterval: 10000
+        });
+        
+        // 启动性能监控（需要video元素）
+        const videoElement = document.querySelector('video') || document.createElement('video');
+        performanceMonitor.startMonitoring(videoElement, { teslaRenderer, teslaDecoder });
         
         // 连接渲染器和解码器
         teslaDecoder.on('frame', (frameData) => {

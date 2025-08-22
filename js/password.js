@@ -112,9 +112,15 @@ async function sha256(message) {
 function showPasswordModal() {
     const passwordModal = document.getElementById('passwordModal');
     if (passwordModal) {
-        // 防止出现豆瓣区域滚动条
-        document.getElementById('doubanArea').classList.add('hidden');
-        document.getElementById('passwordCancelBtn').classList.add('hidden');
+        // 防止出现豆瓣区域滚动条（如果存在）
+        const doubanArea = document.getElementById('doubanArea');
+        if (doubanArea) {
+            doubanArea.classList.add('hidden');
+        }
+        const passwordCancelBtn = document.getElementById('passwordCancelBtn');
+        if (passwordCancelBtn) {
+            passwordCancelBtn.classList.add('hidden');
+        }
 
         // 检查是否需要强制设置密码
         if (isPasswordRequired()) {

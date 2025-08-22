@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>性能优化测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .metric {
+            background: #3a3a3a;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        .metric-label {
+            font-size: 14px;
+            color: #ccc;
+            margin-top: 5px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        #log {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 5px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>LibreTV 性能优化测试</h1>
+        
+        <div class="test-section">
+            <h2>性能监控器测试</h2>
+            <div class="metrics">
+                <div class="metric">
+                    <div class="metric-value" id="fps">0</div>
+                    <div class="metric-label">FPS</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="memory">0</div>
+                    <div class="metric-label">内存使用 (MB)</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="cpu">0</div>
+                    <div class="metric-label">CPU 使用率 (%)</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="quality">-</div>
+                    <div class="metric-label">画质等级</div>
+                </div>
+            </div>
+            <button onclick="startPerformanceTest()">开始性能测试</button>
+            <button onclick="stopPerformanceTest()">停止测试</button>
+            <button onclick="clearLog()">清空日志</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>优化器测试</h2>
+            <button onclick="testOptimizer()">测试性能优化器</button>
+            <button onclick="testHardwareDetection()">测试硬件检测</button>
+            <button onclick="getOptimizationSettings()">获取优化设置</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>测试日志</h2>
+            <div id="log"></div>
+        </div>
+    </div>
+
+    <!-- 引入必要的脚本 -->
+    <script src="js/tesla-performance-optimizer.js"></script>
+    <script src="js/tesla-performance-monitor.js"></script>
+    
+    <script>
+        let performanceOptimizer = null;
+        let performanceMonitor = null;
+        let testInterval = null;
+        
+        function log(message) {
+            const logElement = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.innerHTML += `[${timestamp}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+        
+        function updateMetrics(metrics) {
+            document.getElementById('fps').textContent = metrics.fps || 0;
+            document.getElementById('memory').textContent = Math.round(metrics.memory || 0);
+            document.getElementById('cpu').textContent = Math.round(metrics.cpu || 0);
+            document.getElementById('quality').textContent = metrics.quality || '-';
+        }
+        
+        function startPerformanceTest() {
+            try {
+                // 初始化性能优化器
+                performanceOptimizer = new TeslaPerformanceOptimizer();
+                log('性能优化器初始化成功');
+                
+                // 初始化性能监控器
+                performanceMonitor = new TeslaPerformanceMonitor({
+                    debug: true,
+                    monitoringInterval: 1000
+                });
+                log('性能监控器初始化成功');
+                
+                // 创建模拟视频元素
+                const videoElement = document.createElement('video');
+                videoElement.style.display = 'none';
+                document.body.appendChild(videoElement);
+                
+                // 开始监控
+                performanceMonitor.startMonitoring(videoElement, {
+                    optimizer: performanceOptimizer
+                });
+                log('开始性能监控');
+                
+                // 定期更新指标显示
+                testInterval = setInterval(() => {
+                    const metrics = performanceMonitor.getPerformanceReport();
+                    updateMetrics({
+                        fps: Math.random() * 60, // 模拟FPS
+                        memory: performance.memory ? performance.memory.usedJSHeapSize / 1024 / 1024 : 0,
+                        cpu: Math.random() * 100, // 模拟CPU使用率
+                        quality: performanceOptimizer.qualityLevel
+                    });
+                }, 1000);
+                
+                log('性能测试已开始');
+                
+            } catch (error) {
+                log('错误: ' + error.message);
+                console.error(error);
+            }
+        }
+        
+        function stopPerformanceTest() {
+            if (testInterval) {
+                clearInterval(testInterval);
+                testInterval = null;
+            }
+            
+            if (performanceMonitor) {
+                performanceMonitor.stopMonitoring();
+                log('性能监控已停止');
+            }
+            
+            updateMetrics({ fps: 0, memory: 0, cpu: 0, quality: '-' });
+            log('性能测试已停止');
+        }
+        
+        function testOptimizer() {
+            try {
+                if (!performanceOptimizer) {
+                    performanceOptimizer = new TeslaPerformanceOptimizer();
+                }
+                
+                log('测试性能优化器功能...');
+                
+                // 测试优化设置
+                const settings = performanceOptimizer.getOptimizationSettings();
+                log('优化设置: ' + JSON.stringify(settings, null, 2));
+                
+                // 测试性能指标
+                const metrics = performanceOptimizer.getPerformanceMetrics();
+                log('性能指标: ' + JSON.stringify(metrics, null, 2));
+                
+                // 测试优化建议
+                const recommendations = performanceOptimizer.getOptimizationRecommendations();
+                log('优化建议: ' + recommendations.join(', '));
+                
+            } catch (error) {
+                log('优化器测试错误: ' + error.message);
+                console.error(error);
+            }
+        }
+        
+        function testHardwareDetection() {
+            try {
+                if (!performanceOptimizer) {
+                    performanceOptimizer = new TeslaPerformanceOptimizer();
+                }
+                
+                log('测试硬件检测功能...');
+                
+                // 检测GPU信息
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                
+                if (gl) {
+                    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                    if (debugInfo) {
+                        const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+                        const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+                        log('GPU渲染器: ' + renderer);
+                        log('GPU厂商: ' + vendor);
+                    }
+                }
+                
+                // 检测内存信息
+                if (navigator.deviceMemory) {
+                    log('设备内存: ' + navigator.deviceMemory + 'GB');
+                }
+                
+                if (performance.memory) {
+                    log('JS堆内存使用: ' + Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) + 'MB');
+                    log('JS堆内存限制: ' + Math.round(performance.memory.jsHeapSizeLimit / 1024 / 1024) + 'MB');
+                }
+                
+            } catch (error) {
+                log('硬件检测错误: ' + error.message);
+                console.error(error);
+            }
+        }
+        
+        function getOptimizationSettings() {
+            try {
+                if (!performanceOptimizer) {
+                    performanceOptimizer = new TeslaPerformanceOptimizer();
+                }
+                
+                const settings = performanceOptimizer.getOptimizationSettings();
+                log('当前优化设置:');
+                log('目标FPS: ' + settings.targetFPS);
+                log('画质等级: ' + settings.qualityLevel);
+                log('缓冲区大小: ' + settings.bufferSize + 's');
+                log('GPU加速: ' + (settings.enableGPUAcceleration ? '启用' : '禁用'));
+                log('最大解码线程: ' + settings.maxDecodingThreads);
+                
+            } catch (error) {
+                log('获取设置错误: ' + error.message);
+                console.error(error);
+            }
+        }
+        
+        // 页面加载完成后的初始化
+        window.addEventListener('load', function() {
+            log('性能测试页面加载完成');
+            log('点击"开始性能测试"按钮开始测试');
+        });
+    </script>
+</body>
+</html>

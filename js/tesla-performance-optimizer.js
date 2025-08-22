@@ -449,6 +449,20 @@ class TeslaPerformanceOptimizer {
     }
     
     /**
+     * 获取优化设置
+     */
+    getOptimizationSettings() {
+        return {
+            targetFPS: this.frameRateTarget,
+            qualityLevel: this.qualityLevel,
+            bufferSize: this.bufferSize,
+            enableGPUAcceleration: this.optimizationSettings.enableGPUAcceleration,
+            maxDecodingThreads: this.optimizationSettings.maxDecodingThreads || 4,
+            memoryThreshold: this.memoryThreshold
+        };
+    }
+    
+    /**
      * 获取优化建议
      */
     getOptimizationRecommendations() {
