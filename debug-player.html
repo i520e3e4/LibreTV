@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>播放器调试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .debug-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #2a2a2a;
+        }
+        .error {
+            color: #ff6b6b;
+            background: #2d1b1b;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            color: #51cf66;
+            background: #1b2d1b;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .info {
+            color: #74c0fc;
+            background: #1b1d2d;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #005a9e;
+        }
+        #video-container {
+            width: 100%;
+            height: 400px;
+            background: #000;
+            border: 1px solid #333;
+            border-radius: 8px;
+            position: relative;
+            margin: 20px 0;
+        }
+        video {
+            width: 100%;
+            height: 100%;
+        }
+        .log {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <h1>LibreTV 播放器调试工具</h1>
+        
+        <div class="test-section">
+            <h2>环境检测</h2>
+            <button onclick="checkEnvironment()">检测播放环境</button>
+            <div id="env-results"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>视频播放测试</h2>
+            <input type="text" id="video-url" placeholder="输入视频URL" style="width: 60%; padding: 8px; margin-right: 10px; background: #333; border: 1px solid #555; color: white; border-radius: 4px;">
+            <button onclick="testVideoPlayback()">测试播放</button>
+            <button onclick="testWithSampleVideo()">使用示例视频</button>
+            <div id="video-container"></div>
+            <div id="video-results"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>错误日志</h2>
+            <button onclick="clearLog()">清空日志</button>
+            <div id="error-log" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        let logContainer = document.getElementById('error-log');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = type;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        function clearLog() {
+            logContainer.innerHTML = '';
+        }
+        
+        function showResult(containerId, title, success, message) {
+            const container = document.getElementById(containerId);
+            const resultClass = success ? 'success' : 'error';
+            container.innerHTML = `<div class="${resultClass}"><strong>${title}:</strong> ${message}</div>`;
+        }
+        
+        function checkEnvironment() {
+            const results = document.getElementById('env-results');
+            results.innerHTML = '';
+            
+            log('开始环境检测', 'info');
+            
+            // 检测浏览器支持
+            const checks = [
+                { name: 'HTML5 Video', test: () => !!document.createElement('video').canPlayType },
+                { name: 'WebRTC', test: () => !!(window.RTCPeerConnection && window.RTCSessionDescription) },
+                { name: 'Canvas', test: () => !!document.createElement('canvas').getContext },
+                { name: 'WebGL', test: () => {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        return !!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
+                    } catch (e) {
+                        return false;
+                    }
+                }},
+                { name: 'HLS.js支持', test: () => typeof Hls !== 'undefined' },
+                { name: 'ArtPlayer支持', test: () => typeof Artplayer !== 'undefined' }
+            ];
+            
+            checks.forEach(check => {
+                try {
+                    const supported = check.test();
+                    const status = supported ? '✓ 支持' : '✗ 不支持';
+                    const className = supported ? 'success' : 'error';
+                    results.innerHTML += `<div class="${className}">${check.name}: ${status}</div>`;
+                    log(`${check.name}: ${status}`, supported ? 'success' : 'error');
+                } catch (e) {
+                    results.innerHTML += `<div class="error">${check.name}: 检测失败 - ${e.message}</div>`;
+                    log(`${check.name}: 检测失败 - ${e.message}`, 'error');
+                }
+            });
+            
+            // 检测用户代理
+            const userAgent = navigator.userAgent;
+            results.innerHTML += `<div class="info">用户代理: ${userAgent}</div>`;
+            log(`用户代理: ${userAgent}`, 'info');
+            
+            // 检测特斯拉环境
+            const isTesla = userAgent.includes('Tesla') || userAgent.includes('QtWebEngine');
+            const teslaStatus = isTesla ? '是' : '否';
+            const teslaClass = isTesla ? 'info' : 'success';
+            results.innerHTML += `<div class="${teslaClass}">特斯拉环境: ${teslaStatus}</div>`;
+            log(`特斯拉环境: ${teslaStatus}`, 'info');
+        }
+        
+        function testVideoPlayback() {
+            const videoUrl = document.getElementById('video-url').value.trim();
+            if (!videoUrl) {
+                showResult('video-results', '视频播放测试', false, '请输入视频URL');
+                return;
+            }
+            
+            log(`开始测试视频播放: ${videoUrl}`, 'info');
+            playVideo(videoUrl);
+        }
+        
+        function testWithSampleVideo() {
+            // 使用一个公开的测试视频
+            const sampleUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+            log(`使用示例视频测试: ${sampleUrl}`, 'info');
+            document.getElementById('video-url').value = sampleUrl;
+            playVideo(sampleUrl);
+        }
+        
+        function playVideo(url) {
+            const container = document.getElementById('video-container');
+            container.innerHTML = '';
+            
+            try {
+                // 创建视频元素
+                const video = document.createElement('video');
+                video.controls = true;
+                video.autoplay = false;
+                video.preload = 'metadata';
+                video.style.width = '100%';
+                video.style.height = '100%';
+                
+                // 添加事件监听
+                video.addEventListener('loadstart', () => {
+                    log('视频开始加载', 'info');
+                    showResult('video-results', '视频状态', true, '开始加载视频');
+                });
+                
+                video.addEventListener('loadedmetadata', () => {
+                    log(`视频元数据加载完成 - 时长: ${video.duration}秒, 尺寸: ${video.videoWidth}x${video.videoHeight}`, 'success');
+                    showResult('video-results', '视频状态', true, `元数据加载完成 (${video.videoWidth}x${video.videoHeight})`);
+                });
+                
+                video.addEventListener('canplay', () => {
+                    log('视频可以播放', 'success');
+                    showResult('video-results', '视频状态', true, '视频可以播放');
+                });
+                
+                video.addEventListener('playing', () => {
+                    log('视频开始播放', 'success');
+                    showResult('video-results', '视频状态', true, '视频正在播放');
+                });
+                
+                video.addEventListener('error', (e) => {
+                    const error = video.error;
+                    let errorMessage = '未知错误';
+                    if (error) {
+                        switch (error.code) {
+                            case error.MEDIA_ERR_ABORTED:
+                                errorMessage = '播放被中止';
+                                break;
+                            case error.MEDIA_ERR_NETWORK:
+                                errorMessage = '网络错误';
+                                break;
+                            case error.MEDIA_ERR_DECODE:
+                                errorMessage = '解码错误';
+                                break;
+                            case error.MEDIA_ERR_SRC_NOT_SUPPORTED:
+                                errorMessage = '视频格式不支持';
+                                break;
+                        }
+                    }
+                    log(`视频播放错误: ${errorMessage} (代码: ${error ? error.code : 'unknown'})`, 'error');
+                    showResult('video-results', '视频播放测试', false, errorMessage);
+                });
+                
+                video.addEventListener('stalled', () => {
+                    log('视频播放停滞', 'error');
+                });
+                
+                video.addEventListener('waiting', () => {
+                    log('视频缓冲中', 'info');
+                });
+                
+                // 设置视频源
+                video.src = url;
+                container.appendChild(video);
+                
+                // 尝试加载视频
+                video.load();
+                
+                log('视频元素已创建并开始加载', 'info');
+                
+            } catch (error) {
+                log(`创建视频播放器失败: ${error.message}`, 'error');
+                showResult('video-results', '视频播放测试', false, `创建播放器失败: ${error.message}`);
+            }
+        }
+        
+        // 捕获全局错误
+        window.addEventListener('error', (e) => {
+            log(`全局错误: ${e.message} (${e.filename}:${e.lineno})`, 'error');
+        });
+        
+        window.addEventListener('unhandledrejection', (e) => {
+            log(`未处理的Promise拒绝: ${e.reason}`, 'error');
+        });
+        
+        // 页面加载完成后自动检测环境
+        window.addEventListener('load', () => {
+            log('页面加载完成，开始自动环境检测', 'info');
+            checkEnvironment();
+        });
+    </script>
+</body>
+</html>

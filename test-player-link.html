@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>播放器测试链接</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #1a1a1a;
+            color: white;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-link {
+            display: block;
+            background: #007acc;
+            color: white;
+            text-decoration: none;
+            padding: 15px 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+        .test-link:hover {
+            background: #005a9e;
+        }
+        .description {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #007acc;
+        }
+        .code {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .warning {
+            background: #2d1b1b;
+            border-left: 4px solid #ff6b6b;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .success {
+            background: #1b2d1b;
+            border-left: 4px solid #51cf66;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>LibreTV 播放器测试链接</h1>
+        
+        <div class="description">
+            <h2>问题诊断</h2>
+            <p>当前播放器显示"正在加载视频..."的原因是缺少必要的URL参数。播放器需要以下参数：</p>
+            <ul>
+                <li><strong>url</strong> - 视频文件的直接链接</li>
+                <li><strong>title</strong> - 视频标题</li>
+                <li><strong>source</strong> - 视频源标识</li>
+            </ul>
+        </div>
+        
+        <div class="warning">
+            <h3>当前问题</h3>
+            <p>直接访问 <code>player.html</code> 页面而不传递任何参数会导致播放器无法加载视频，因为没有视频URL可供播放。</p>
+        </div>
+        
+        <h2>测试链接</h2>
+        
+        <a href="player.html?url=https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4&title=大雄兔测试视频&source=test" class="test-link">
+            测试1: 标准MP4视频播放
+        </a>
+        <div class="code">
+            URL: player.html?url=https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4&title=大雄兔测试视频&source=test
+        </div>
+        
+        <a href="player.html?url=https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8&title=HLS测试视频&source=test" class="test-link">
+            测试2: HLS流媒体播放
+        </a>
+        <div class="code">
+            URL: player.html?url=https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8&title=HLS测试视频&source=test
+        </div>
+        
+        <a href="player.html?url=https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4&title=示例视频&source=test&index=0&position=0" class="test-link">
+            测试3: 完整参数测试
+        </a>
+        <div class="code">
+            URL: player.html?url=https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4&title=示例视频&source=test&index=0&position=0
+        </div>
+        
+        <div class="success">
+            <h3>解决方案</h3>
+            <p>要正常使用播放器，需要：</p>
+            <ol>
+                <li>确保通过正确的URL参数访问播放器页面</li>
+                <li>提供有效的视频URL</li>
+                <li>确保视频URL可以正常访问（没有CORS限制）</li>
+                <li>检查网络连接是否正常</li>
+            </ol>
+        </div>
+        
+        <div class="description">
+            <h3>调试步骤</h3>
+            <ol>
+                <li>点击上面的测试链接验证播放器功能</li>
+                <li>如果测试视频可以播放，说明播放器功能正常</li>
+                <li>如果测试视频无法播放，检查浏览器控制台错误信息</li>
+                <li>确认实际使用时传递了正确的URL参数</li>
+            </ol>
+        </div>
+        
+        <h2>其他工具</h2>
+        <a href="debug-player.html" class="test-link">
+            打开播放器调试工具
+        </a>
+        
+        <a href="performance-test.html" class="test-link">
+            打开性能测试页面
+        </a>
+        
+        <a href="tesla-test.html" class="test-link">
+            打开特斯拉兼容性测试
+        </a>
+    </div>
+</body>
+</html>
